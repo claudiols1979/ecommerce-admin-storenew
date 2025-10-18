@@ -247,25 +247,7 @@ function Resellers() {
                 <MDTypography variant="h6" color="white">
                   Gestión de Revendedores
                 </MDTypography>
-                {isAdmin && ( // Only Admin can create new resellers
-                  <MDButton
-                    component={Link}
-                    to="/resellers/create" // Assuming this route will exist
-                    variant="gradient"
-                    bgColor="dark"
-                    color="white"
-                    sx={{
-                      backgroundColor: "#333", // Explicitly set background to black
-                      color: "#FFFFFF", // Explicitly set text color to white
-                      "&:hover": {
-                        backgroundColor: "#333", // Slightly lighter black on hover for feedback
-                      },
-                    }} // Changed from "dark" to "info" for better visibility
-                  >
-                    <Icon sx={{ fontWeight: "bold", color: "white" }}>person_add</Icon>
-                    &nbsp;añadir revendedor
-                  </MDButton>
-                )}
+                
               </MDBox>
               <MDBox p={3}>
                 {/* Search Input */}
