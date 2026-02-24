@@ -21,6 +21,7 @@ import HeroCarousel from "layouts/herocarousel";
 import AdGridSystem from "layouts/adgridsystem";
 import HeroVideoCarousel from "layouts/herovideocarousel";
 import Resellers from "layouts/resellers";
+import Administration from "layouts/administration";
 import SignIn from "layouts/authentication/sign-in";
 import SignUp from "layouts/authentication/sign-up";
 import ForgotPassword from "layouts/authentication/reset-password/cover";
@@ -179,6 +180,15 @@ const routes = [
     component: <Profile />,
     // Roles with double quotes
     allowedRoles: ["Administrador", "Editor", "Revendedor"], // All authenticated users
+  },
+  {
+    type: "collapse",
+    name: "Configuración",
+    key: "configuracion",
+    icon: <Icon fontSize="small">settings</Icon>,
+    route: "/administration",
+    component: <Administration />,
+    allowedRoles: ["Administrador"], // Only Admin can configure
   },
 
   // --- Public Routes (No 'allowedRoles' property) ---

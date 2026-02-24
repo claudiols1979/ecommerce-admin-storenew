@@ -60,26 +60,14 @@ function Dashboard() {
 
   // Existing useEffect hooks are preserved
   useEffect(() => {
-    console.log("Dashboard: Triggering product fetch...");
     getProducts();
   }, [getProducts]);
 
-  useEffect(() => {
-    if (products.length > 0) {
-      console.log("Dashboard: Products loaded successfully:");
-      console.log(products);
-    } else {
-      console.log("Dashboard: Products array is currently empty or still loading.");
-    }
-  }, [products]);
+  useEffect(() => {}, [products]);
 
   const summary = dashboardData?.summary;
   const orderDetails = dashboardData?.orderDetails; // This is the data you need
   const charts = dashboardData?.charts;
-
-  console.log("summary: ", summary);
-  console.log("orderDetails: ", orderDetails);
-  console.log("charts: ", charts);
 
   const currentYear = new Date().getFullYear().toString();
   const currentYearRevenueData = summary?.revenueByYear?.find((item) => item._id === currentYear);

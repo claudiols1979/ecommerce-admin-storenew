@@ -14,14 +14,7 @@ import MenuItem from "@mui/material/MenuItem";
 import InputLabel from "@mui/material/InputLabel";
 import FormControl from "@mui/material/FormControl";
 import IconButton from "@mui/material/IconButton";
-import DeleteIcon from "@mui/icons-material/Delete";
-import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import ListItemText from "@mui/material/ListItemText";
-import ListItemSecondaryAction from "@mui/material/ListItemSecondaryAction";
 import { useTheme, useMediaQuery } from "@mui/material";
-import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -39,6 +32,7 @@ import Footer from "examples/Footer";
 // Contexts & Config
 import { useOrders } from "contexts/OrderContext";
 import { useAuth } from "contexts/AuthContext";
+import { useConfig } from "contexts/ConfigContext";
 import API_URL from "config";
 
 // Status Translations
@@ -142,6 +136,7 @@ function EditOrder() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { getOrderById, updateOrder, loading: orderLoading } = useOrders();
+  const { taxRegime: globalTaxRegime } = useConfig();
   const { user } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -150,6 +145,7 @@ function EditOrder() {
 
   const [order, setOrder] = useState(null);
   const [currentStatus, setCurrentStatus] = useState("");
+  const [orderTaxRegime, setOrderTaxRegime] = useState("traditional");
   const [cartItems, setCartItems] = useState([]);
   const [initialStatus, setInitialStatus] = useState("");
   const [initialCartItems, setInitialCartItems] = useState([]);
@@ -213,6 +209,7 @@ function EditOrder() {
           setOrder(fetchedOrder);
           setCurrentStatus(fetchedOrder.status);
           setInitialStatus(fetchedOrder.status);
+          setOrderTaxRegime(fetchedOrder.taxRegime || globalTaxRegime || "traditional");
           const mappedItems = fetchedOrder.items.map((item) => {
             const productInfo =
               item.product && typeof item.product === "object" ? item.product : {};
@@ -243,21 +240,40 @@ function EditOrder() {
           setCartItems(mappedItems);
           setInitialCartItems(mappedItems);
           setCustomerDetails({
-            name: fetchedOrder.customerDetails?.name || "",
-            phoneNumber: fetchedOrder.customerDetails?.phoneNumber || "",
-            address: fetchedOrder.customerDetails?.address || "",
+            name:
+              (fetchedOrder.user
+                ? `${fetchedOrder.user.firstName} ${fetchedOrder.user.lastName}`
+                : "") ||
+              fetchedOrder.customerDetails?.name ||
+              "",
+            phoneNumber:
+              fetchedOrder.user?.phoneNumber || fetchedOrder.customerDetails?.phoneNumber || "",
+            address: fetchedOrder.user?.address || fetchedOrder.customerDetails?.address || "",
             provincia:
-              fetchedOrder.customerDetails?.province ||
+              fetchedOrder.user?.provincia ||
+              fetchedOrder.user?.province ||
               fetchedOrder.customerDetails?.provincia ||
+              fetchedOrder.customerDetails?.province ||
               "",
             province:
-              fetchedOrder.customerDetails?.province ||
+              fetchedOrder.user?.provincia ||
+              fetchedOrder.user?.province ||
               fetchedOrder.customerDetails?.provincia ||
+              fetchedOrder.customerDetails?.province ||
               "",
             canton:
-              fetchedOrder.customerDetails?.city || fetchedOrder.customerDetails?.canton || "",
-            city: fetchedOrder.customerDetails?.city || fetchedOrder.customerDetails?.canton || "",
-            distrito: fetchedOrder.customerDetails?.distrito || "",
+              fetchedOrder.user?.canton ||
+              fetchedOrder.user?.city ||
+              fetchedOrder.customerDetails?.canton ||
+              fetchedOrder.customerDetails?.city ||
+              "",
+            city:
+              fetchedOrder.user?.canton ||
+              fetchedOrder.user?.city ||
+              fetchedOrder.customerDetails?.canton ||
+              fetchedOrder.customerDetails?.city ||
+              "",
+            distrito: fetchedOrder.user?.distrito || fetchedOrder.customerDetails?.distrito || "",
           });
         } else {
           throw new Error("Detalles del pedido no encontrados.");
@@ -318,21 +334,36 @@ function EditOrder() {
   };
 
   const getFullBreakdown = useCallback(() => {
+    const activeRegime = orderTaxRegime;
     const subtotal = cartItems.reduce((total, item) => total + item.quantity * item.priceAtSale, 0);
 
-    const iva = cartItems.reduce((total, item) => {
-      const taxRate =
-        (parseFloat(item.product?.iva) !== undefined && item.product?.iva !== ""
-          ? parseFloat(item.product?.iva)
-          : 13) / 100;
-      return total + Math.round(item.quantity * item.priceAtSale * taxRate);
-    }, 0);
+    const iva =
+      activeRegime === "simplified"
+        ? 0
+        : cartItems.reduce((total, item) => {
+            const taxRate =
+              (parseFloat(item.product?.iva) !== undefined && item.product?.iva !== ""
+                ? parseFloat(item.product?.iva)
+                : 13) / 100;
+            return total + Math.round(item.quantity * item.priceAtSale * taxRate);
+          }, 0);
 
-    const prov = customerDetails.province || customerDetails.provincia;
-    const cant = customerDetails.city || customerDetails.canton;
+    const prov = customerDetails.provincia || customerDetails.province;
+    const cant = customerDetails.canton || customerDetails.city;
 
-    const shippingBase = calculateShippingFee(prov, cant, cartItems);
-    const shippingTax = Math.round(shippingBase * 0.13);
+    const shippingBaseRaw = calculateShippingFee(prov, cant, cartItems);
+
+    let shippingBase, shippingTax;
+    if (activeRegime === "simplified") {
+      // Simplificado: El envío base YA trae el 13%, y no hay desglose de IVA (0)
+      // Usamos floor para coincidir con el redondeo del backend en algunos casos de ₡X.5
+      shippingBase = Math.floor(shippingBaseRaw * 1.13);
+      shippingTax = 0;
+    } else {
+      // Tradicional: Base es base, y el IVA es el 13% de la base
+      shippingBase = shippingBaseRaw;
+      shippingTax = Math.floor(shippingBase * 0.13);
+    }
 
     return {
       subtotal,
@@ -340,8 +371,9 @@ function EditOrder() {
       shippingBase,
       shippingTax,
       total: subtotal + iva + shippingBase + shippingTax,
+      taxRegime: activeRegime,
     };
-  }, [cartItems, customerDetails]);
+  }, [cartItems, customerDetails, orderTaxRegime]);
 
   const calculateTotalWeightGrams = useCallback(() => {
     return cartItems.reduce((total, item) => {
@@ -423,6 +455,7 @@ function EditOrder() {
       return toast.error("No se pueden modificar los artículos en este estado.");
     const updatedData = {
       status: currentStatus,
+      taxRegime: orderTaxRegime,
       items: cartItems.map((item) => ({
         product: item.product._id,
         quantity: item.quantity,
@@ -544,6 +577,44 @@ function EditOrder() {
 
                   <Grid item xs={12} md={6}>
                     <FormControl fullWidth variant="outlined">
+                      <InputLabel
+                        id="regime-label"
+                        sx={{
+                          "&.Mui-disabled": {
+                            color: darkMode ? "rgba(255, 255, 255, 0.5) !important" : "inherit",
+                          },
+                        }}
+                      >
+                        Régimen Fiscal
+                      </InputLabel>
+                      <Select
+                        labelId="regime-label"
+                        value={orderTaxRegime}
+                        onChange={(e) => setOrderTaxRegime(e.target.value)}
+                        label="Régimen Fiscal"
+                        disabled={true}
+                        sx={{
+                          "& .MuiSelect-select.Mui-disabled": {
+                            color: darkMode ? "rgba(255, 255, 255, 0.8) !important" : "inherit",
+                            WebkitTextFillColor: darkMode
+                              ? "rgba(255, 255, 255, 0.8) !important"
+                              : "inherit",
+                          },
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderColor: darkMode
+                              ? "rgba(255, 255, 255, 0.3) !important"
+                              : "inherit",
+                          },
+                        }}
+                      >
+                        <MenuItem value="traditional">Régimen Tradicional</MenuItem>
+                        <MenuItem value="simplified">Régimen Simplificado</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <FormControl fullWidth variant="outlined">
                       <InputLabel id="status-label">Estado</InputLabel>
                       <Select
                         labelId="status-label"
@@ -596,6 +667,21 @@ function EditOrder() {
                         setCustomerDetails({ ...customerDetails, name: e.target.value })
                       }
                       variant="outlined"
+                      disabled={true}
+                      sx={{
+                        "& .MuiInputBase-input.Mui-disabled": {
+                          color: darkMode ? "rgba(255, 255, 255, 0.8) !important" : "inherit",
+                          WebkitTextFillColor: darkMode
+                            ? "rgba(255, 255, 255, 0.8) !important"
+                            : "inherit",
+                        },
+                        "& .MuiInputLabel-root.Mui-disabled": {
+                          color: darkMode ? "rgba(255, 255, 255, 0.5) !important" : "inherit",
+                        },
+                        "& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline": {
+                          borderColor: darkMode ? "rgba(255, 255, 255, 0.3) !important" : "inherit",
+                        },
+                      }}
                     />
                   </Grid>
 
@@ -608,6 +694,21 @@ function EditOrder() {
                         setCustomerDetails({ ...customerDetails, phoneNumber: e.target.value })
                       }
                       variant="outlined"
+                      disabled={true}
+                      sx={{
+                        "& .MuiInputBase-input.Mui-disabled": {
+                          color: darkMode ? "rgba(255, 255, 255, 0.8) !important" : "inherit",
+                          WebkitTextFillColor: darkMode
+                            ? "rgba(255, 255, 255, 0.8) !important"
+                            : "inherit",
+                        },
+                        "& .MuiInputLabel-root.Mui-disabled": {
+                          color: darkMode ? "rgba(255, 255, 255, 0.5) !important" : "inherit",
+                        },
+                        "& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline": {
+                          borderColor: darkMode ? "rgba(255, 255, 255, 0.3) !important" : "inherit",
+                        },
+                      }}
                     />
                   </Grid>
 
@@ -615,7 +716,7 @@ function EditOrder() {
                     <TextField
                       fullWidth
                       label="Provincia"
-                      value={customerDetails.provincia || customerDetails.province}
+                      value={customerDetails.provincia || customerDetails.province || ""}
                       onChange={(e) =>
                         setCustomerDetails({
                           ...customerDetails,
@@ -624,6 +725,21 @@ function EditOrder() {
                         })
                       }
                       variant="outlined"
+                      disabled={true}
+                      sx={{
+                        "& .MuiInputBase-input.Mui-disabled": {
+                          color: darkMode ? "rgba(255, 255, 255, 0.8) !important" : "inherit",
+                          WebkitTextFillColor: darkMode
+                            ? "rgba(255, 255, 255, 0.8) !important"
+                            : "inherit",
+                        },
+                        "& .MuiInputLabel-root.Mui-disabled": {
+                          color: darkMode ? "rgba(255, 255, 255, 0.5) !important" : "inherit",
+                        },
+                        "& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline": {
+                          borderColor: darkMode ? "rgba(255, 255, 255, 0.3) !important" : "inherit",
+                        },
+                      }}
                     />
                   </Grid>
 
@@ -631,7 +747,7 @@ function EditOrder() {
                     <TextField
                       fullWidth
                       label="Cantón"
-                      value={customerDetails.canton || customerDetails.city}
+                      value={customerDetails.canton || customerDetails.city || ""}
                       onChange={(e) =>
                         setCustomerDetails({
                           ...customerDetails,
@@ -640,6 +756,21 @@ function EditOrder() {
                         })
                       }
                       variant="outlined"
+                      disabled={true}
+                      sx={{
+                        "& .MuiInputBase-input.Mui-disabled": {
+                          color: darkMode ? "rgba(255, 255, 255, 0.8) !important" : "inherit",
+                          WebkitTextFillColor: darkMode
+                            ? "rgba(255, 255, 255, 0.8) !important"
+                            : "inherit",
+                        },
+                        "& .MuiInputLabel-root.Mui-disabled": {
+                          color: darkMode ? "rgba(255, 255, 255, 0.5) !important" : "inherit",
+                        },
+                        "& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline": {
+                          borderColor: darkMode ? "rgba(255, 255, 255, 0.3) !important" : "inherit",
+                        },
+                      }}
                     />
                   </Grid>
 
@@ -652,6 +783,21 @@ function EditOrder() {
                         setCustomerDetails({ ...customerDetails, distrito: e.target.value })
                       }
                       variant="outlined"
+                      disabled={true}
+                      sx={{
+                        "& .MuiInputBase-input.Mui-disabled": {
+                          color: darkMode ? "rgba(255, 255, 255, 0.8) !important" : "inherit",
+                          WebkitTextFillColor: darkMode
+                            ? "rgba(255, 255, 255, 0.8) !important"
+                            : "inherit",
+                        },
+                        "& .MuiInputLabel-root.Mui-disabled": {
+                          color: darkMode ? "rgba(255, 255, 255, 0.5) !important" : "inherit",
+                        },
+                        "& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline": {
+                          borderColor: darkMode ? "rgba(255, 255, 255, 0.3) !important" : "inherit",
+                        },
+                      }}
                     />
                   </Grid>
 
@@ -666,273 +812,74 @@ function EditOrder() {
                         setCustomerDetails({ ...customerDetails, address: e.target.value })
                       }
                       variant="outlined"
+                      disabled={true}
+                      sx={{
+                        "& .MuiInputBase-input.Mui-disabled": {
+                          color: darkMode ? "rgba(255, 255, 255, 0.8) !important" : "inherit",
+                          WebkitTextFillColor: darkMode
+                            ? "rgba(255, 255, 255, 0.8) !important"
+                            : "inherit",
+                        },
+                        "& .MuiInputLabel-root.Mui-disabled": {
+                          color: darkMode ? "rgba(255, 255, 255, 0.5) !important" : "inherit",
+                        },
+                        "& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline": {
+                          borderColor: darkMode ? "rgba(255, 255, 255, 0.3) !important" : "inherit",
+                        },
+                      }}
                     />
                   </Grid>
-                  <Grid item xs={12}>
-                    <MDTypography variant="h6" mt={3} mb={1}>
-                      Modificar Artículos:
-                    </MDTypography>
-                  </Grid>
-                  {areOrderItemsEditable ? (
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        variant="outlined"
-                        label="Buscar producto por nombre o código para añadir"
-                        value={productSearchTerm}
-                        onChange={(e) => setProductSearchTerm(e.target.value)}
-                        placeholder="Ej: Eros, PERF001..."
-                        disabled={!areOrderItemsEditable}
-                      />
-                      {productsLoading && <CircularProgress size={20} sx={{ mt: 1 }} />}
-                      {!productsLoading && searchedProducts.length > 0 && (
-                        <Card sx={{ mt: 1, maxHeight: 220, overflow: "auto" }}>
-                          <List dense>
-                            {searchedProducts.map((product) => (
-                              <ListItem key={product._id} divider>
-                                <MDBox flexGrow={1} p={2}>
-                                  <MDTypography variant="button" color="text" fontWeight="medium">
-                                    {product.name}
-                                  </MDTypography>
-                                  <MDTypography
-                                    variant="caption"
-                                    color="text"
-                                    display="block"
-                                  >{`Cód: ${product.code} | Stock: ${product.countInStock}`}</MDTypography>
-                                </MDBox>
-                                <ListItemSecondaryAction>
-                                  <MDButton
-                                    variant="outlined"
-                                    color="info"
-                                    size="small"
-                                    onClick={() => handleAddToCart(product)}
-                                    sx={{ mr: 1 }}
-                                  >
-                                    Añadir
-                                  </MDButton>
-                                </ListItemSecondaryAction>
-                              </ListItem>
-                            ))}
-                          </List>
-                        </Card>
-                      )}
-                    </Grid>
-                  ) : (
-                    <Grid item xs={12}>
-                      <MDTypography variant="body2" color="text">
-                        No se pueden modificar los artículos en el estado actual del pedido.
-                      </MDTypography>
-                    </Grid>
-                  )}
 
                   <Grid item xs={12}>
                     <MDTypography variant="h6" mt={3} mb={2}>
-                      Artículos Actuales ({cartItems.length}):
+                      Artículos del Pedido ({cartItems.length}):
                     </MDTypography>
                   </Grid>
                   <Grid item xs={12}>
                     {cartItems.length > 0 ? (
-                      cartItems.map((item) => {
-                        const maxStock = item.product.totalStock;
-                        return (
-                          <MDBox
-                            key={item.product._id}
-                            display="flex"
-                            alignItems="center"
-                            justifyContent="space-between"
-                            mb={1}
-                            p={1}
-                            borderBottom="1px solid #eee"
-                          >
-                            <MDBox display="flex" alignItems="center" flex={1} mr={2}>
-                              <MDBox
-                                component="img"
-                                src={
-                                  item.product?.imageUrls?.[0]?.secure_url ||
-                                  "https://placehold.co/40x40/cccccc/000000?text=Item"
-                                }
-                                alt={item.name}
-                                sx={{
-                                  width: "40px",
-                                  height: "40px",
-                                  objectFit: "cover",
-                                  borderRadius: "md",
-                                  mr: 1.5,
-                                }}
-                              />
-                              <MDTypography variant="button" fontWeight="medium" color="text">
-                                {item.name} (Cód: {item.code}) - {item.quantity} x{" "}
-                                {item.priceAtSale.toLocaleString("es-CR", {
-                                  style: "currency",
-                                  currency: "CRC",
-                                  minimumFractionDigits: 0,
-                                  maximumFractionDigits: 0,
-                                })}
-                              </MDTypography>
-                            </MDBox>
-                            <MDBox display="flex" alignItems="center" gap={{ xs: 0.5, sm: 1 }}>
-                              {isMobile ? (
-                                <>
-                                  <IconButton
-                                    onClick={() => handleQuantityButtonClick(item.product._id, -1)}
-                                    disabled={!areOrderItemsEditable || item.quantity <= 1}
-                                    size="small"
-                                  >
-                                    <RemoveCircleOutlineIcon />
-                                  </IconButton>
-                                  <MDTypography
-                                    variant="body2"
-                                    sx={{ width: "2ch", textAlign: "center", fontWeight: "bold" }}
-                                  >
-                                    {item.quantity}
-                                  </MDTypography>
-                                  <IconButton
-                                    onClick={() => handleQuantityButtonClick(item.product._id, 1)}
-                                    disabled={!areOrderItemsEditable || item.quantity >= maxStock}
-                                    size="small"
-                                  >
-                                    <AddCircleOutlineIcon />
-                                  </IconButton>
-                                </>
-                              ) : (
-                                // <TextField
-                                //   type="number"
-                                //   value={item.quantity}
-                                //   onChange={(e) =>
-                                //     handleUpdateCartItemQuantity(item.product._id, e.target.value)
-                                //   }
-                                //   inputProps={{ min: 1, max: maxStock }}
-                                //   sx={{ width: "70px" }}
-                                //   size="small"
-                                //   disabled={!areOrderItemsEditable}
-                                // />
-                                <>
-                                  <IconButton
-                                    onClick={() => handleQuantityButtonClick(item.product._id, -1)}
-                                    disabled={!areOrderItemsEditable || item.quantity <= 1}
-                                    size="small"
-                                  >
-                                    <RemoveCircleOutlineIcon />
-                                  </IconButton>
-                                  <MDTypography
-                                    variant="body2"
-                                    sx={{ width: "2ch", textAlign: "center", fontWeight: "bold" }}
-                                  >
-                                    {item.quantity}
-                                  </MDTypography>
-                                  <IconButton
-                                    onClick={() => handleQuantityButtonClick(item.product._id, 1)}
-                                    disabled={!areOrderItemsEditable || item.quantity >= maxStock}
-                                    size="small"
-                                  >
-                                    <AddCircleOutlineIcon />
-                                  </IconButton>
-                                </>
-                              )}
-                              <IconButton
-                                onClick={() => handleRemoveFromCart(item.product._id)}
-                                color="error"
-                                disabled={!areOrderItemsEditable}
-                              >
-                                <DeleteIcon />
-                              </IconButton>
-                            </MDBox>
+                      cartItems.map((item) => (
+                        <MDBox
+                          key={item.product._id}
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="space-between"
+                          mb={1}
+                          p={1}
+                          borderBottom="1px solid #eee"
+                        >
+                          <MDBox display="flex" alignItems="center" flex={1} mr={2}>
+                            <MDBox
+                              component="img"
+                              src={
+                                item.product?.imageUrls?.[0]?.secure_url ||
+                                "https://placehold.co/40x40/cccccc/000000?text=Item"
+                              }
+                              alt={item.name}
+                              sx={{
+                                width: "40px",
+                                height: "40px",
+                                objectFit: "cover",
+                                borderRadius: "md",
+                                mr: 1.5,
+                              }}
+                            />
+                            <MDTypography variant="button" fontWeight="medium" color="text">
+                              {item.name} (Cód: {item.code}) - {item.quantity} x{" "}
+                              {item.priceAtSale.toLocaleString("es-CR", {
+                                style: "currency",
+                                currency: "CRC",
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              })}
+                            </MDTypography>
                           </MDBox>
-                        );
-                      })
+                        </MDBox>
+                      ))
                     ) : (
                       <MDTypography variant="body2" color="text">
                         No hay productos en este pedido.
                       </MDTypography>
                     )}
-                    <MDBox
-                      mt={3}
-                      p={2}
-                      bgColor={darkMode ? "grey-900" : "grey-100"}
-                      borderRadius="lg"
-                    >
-                      <MDTypography variant="h6" mb={1}>
-                        Desglose Actualizado del Pedido:
-                      </MDTypography>
-                      <MDBox display="flex" justifyContent="space-between" mb={0.5}>
-                        <MDTypography variant="button" color="text">
-                          Subtotal Productos:
-                        </MDTypography>
-                        <MDTypography variant="button" fontWeight="medium">
-                          {getFullBreakdown().subtotal.toLocaleString("es-CR", {
-                            style: "currency",
-                            currency: "CRC",
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          })}
-                        </MDTypography>
-                      </MDBox>
-                      <MDBox display="flex" justifyContent="space-between" mb={0.5}>
-                        <MDTypography variant="button" color="text">
-                          IVA Productos:
-                        </MDTypography>
-                        <MDTypography variant="button" fontWeight="medium">
-                          {getFullBreakdown().iva.toLocaleString("es-CR", {
-                            style: "currency",
-                            currency: "CRC",
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          })}
-                        </MDTypography>
-                      </MDBox>
-                      <MDBox display="flex" justifyContent="space-between" mb={0.5}>
-                        <MDTypography variant="button" color="text">
-                          Envío Estimado:
-                        </MDTypography>
-                        <MDTypography variant="button" fontWeight="medium">
-                          {getFullBreakdown().shippingBase.toLocaleString("es-CR", {
-                            style: "currency",
-                            currency: "CRC",
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          })}
-                        </MDTypography>
-                      </MDBox>
-                      <MDBox display="flex" justifyContent="space-between" mb={0.5}>
-                        <MDTypography variant="button" color="text">
-                          IVA Envío (13%):
-                        </MDTypography>
-                        <MDTypography variant="button" fontWeight="medium">
-                          {getFullBreakdown().shippingTax.toLocaleString("es-CR", {
-                            style: "currency",
-                            currency: "CRC",
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          })}
-                        </MDTypography>
-                      </MDBox>
-                      <MDBox
-                        mt={1}
-                        pt={1}
-                        borderTop="1px solid #ccc"
-                        display="flex"
-                        justifyContent="space-between"
-                      >
-                        <MDTypography variant="h5">Total Final:</MDTypography>
-                        <MDTypography variant="h5" color="info">
-                          {Math.round(getFullBreakdown().total).toLocaleString("es-CR", {
-                            style: "currency",
-                            currency: "CRC",
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          })}
-                        </MDTypography>
-                      </MDBox>
-                      <MDTypography variant="caption" color="text" sx={{ mt: 1, display: "block" }}>
-                        Peso: {calculateTotalWeightGrams()}g | Región:{" "}
-                        {isGAM(
-                          customerDetails.province || customerDetails.provincia,
-                          customerDetails.city || customerDetails.canton
-                        )
-                          ? "GAM"
-                          : "Rural/Resto"}
-                      </MDTypography>
-                    </MDBox>
                   </Grid>
 
                   <Grid item xs={12} display="flex" justifyContent="flex-end" mt={3}>

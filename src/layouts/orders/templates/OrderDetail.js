@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import PropTypes from "prop-types"; // Import PropTypes for validation
+import html2pdf from "html2pdf.js";
 
 // @mui material components
 import Grid from "@mui/material/Grid";
@@ -26,6 +27,7 @@ import Footer from "examples/Footer";
 // Contexts
 import { useOrders } from "contexts/OrderContext";
 import { useAuth } from "contexts/AuthContext"; // To determine user role for permissions
+import { useConfig } from "contexts/ConfigContext";
 
 // Status Translations
 const statusTranslations = {
@@ -73,6 +75,7 @@ function OrderDetail() {
   const navigate = useNavigate();
   const { getOrderById, loading: orderLoading } = useOrders();
   const { user } = useAuth();
+  const { systemEnv } = useConfig();
 
   const [order, setOrder] = useState(null);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
@@ -113,8 +116,10 @@ function OrderDetail() {
   }, [id, getOrderById]);
 
   const shippingDetails = order?.customerDetails || {};
-  const currentProvince = shippingDetails.province || shippingDetails.provincia;
-  const currentCity = shippingDetails.city || shippingDetails.canton;
+  const currentProvince =
+    order?.user?.provincia || shippingDetails.province || shippingDetails.provincia;
+  const currentCity = order?.user?.canton || shippingDetails.city || shippingDetails.canton;
+  const currentDistrict = order?.user?.distrito || shippingDetails.distrito;
 
   const GAM_CANTONS = {
     "san jose": [
@@ -201,52 +206,64 @@ function OrderDetail() {
     }
   };
 
-  const displayBreakdown =
-    order &&
-    order.status !== "pending" &&
-    order.taxBreakdown &&
-    order.taxBreakdown.itemsSubtotal > 0
-      ? order.taxBreakdown
-      : (() => {
-          if (!order)
-            return { itemsSubtotal: 0, itemsTax: 0, shippingBase: 0, shippingTax: 0, total: 0 };
+  const displayBreakdown = (() => {
+    if (!order) return { itemsSubtotal: 0, itemsTax: 0, shippingBase: 0, shippingTax: 0, total: 0 };
 
-          // Calculate items subtotal and tax (Dynamic)
-          const iSubtotal = order.items.reduce(
-            (acc, item) => acc + item.quantity * item.priceAtSale,
-            0
-          );
-          const iTax = order.items.reduce((acc, item) => {
-            const iva =
-              parseFloat(item.product?.iva) !== undefined && item.product?.iva !== ""
-                ? parseFloat(item.product?.iva)
-                : 13;
-            return acc + Math.round(item.quantity * item.priceAtSale * (iva / 100));
-          }, 0);
+    const isSimplified = order.taxRegime === "simplified";
 
-          let sBase = 0;
-          let sTax = 0;
+    // 1. Calculate items subtotal (Dynamic)
+    const itemsSubtotal = order.items.reduce(
+      (acc, item) => acc + item.quantity * item.priceAtSale,
+      0
+    );
 
-          // Determine shipping
-          if (order.status === "pending") {
-            sBase = calculateShippingFee(currentProvince, currentCity, order.items);
-            sTax = Math.round(sBase * 0.13);
-          } else {
-            // Old orders get the fixed 3000/390 fallback
-            sBase = 3000;
-            sTax = 390;
-          }
+    // 2. Calculate items tax (Dynamic depending on regime)
+    const itemsTax = isSimplified
+      ? 0
+      : order.items.reduce((acc, item) => {
+          const iva =
+            parseFloat(item.product?.iva) !== undefined && item.product?.iva !== ""
+              ? parseFloat(item.product?.iva)
+              : 13;
+          return acc + Math.round(item.quantity * item.priceAtSale * (iva / 100));
+        }, 0);
 
-          const calculatedTotal = iSubtotal + iTax + sBase + sTax;
+    let shippingBase = 0;
+    let shippingTax = 0;
 
-          return {
-            itemsSubtotal: iSubtotal,
-            itemsTax: iTax,
-            shippingBase: sBase,
-            shippingTax: sTax,
-            total: calculatedTotal,
-          };
-        })();
+    // 3. Determine shipping components
+    if (order.status === "pending") {
+      // For pending orders, always use fresh calculation from current address/items
+      const sBaseRaw = calculateShippingFee(currentProvince, currentCity, order.items);
+      shippingBase = isSimplified ? Math.round(sBaseRaw * 1.13) : sBaseRaw;
+      shippingTax = isSimplified ? 0 : Math.round(shippingBase * 0.13);
+    } else if (order.taxBreakdown && order.taxBreakdown.shippingBase > 0) {
+      // Use saved breakdown if available
+      shippingBase = order.taxBreakdown.shippingBase;
+      shippingTax = order.taxBreakdown.shippingTax;
+
+      // FIX: If stored as traditional but order is simplified, adjust shippingBase
+      if (isSimplified && shippingTax > 0) {
+        shippingBase = Math.round(shippingBase * 1.13);
+        shippingTax = 0;
+      }
+    } else {
+      // Old orders or missing breakdown fallback
+      const sBaseRaw = 3450; // Use the value the user expects (or 3000 if that was original)
+      shippingBase = isSimplified ? Math.round(sBaseRaw * 1.13) : sBaseRaw;
+      shippingTax = isSimplified ? 0 : Math.round(shippingBase * 0.13);
+    }
+
+    const calculatedTotal = itemsSubtotal + itemsTax + shippingBase + shippingTax;
+
+    return {
+      itemsSubtotal,
+      itemsTax,
+      shippingBase,
+      shippingTax,
+      total: calculatedTotal,
+    };
+  })();
 
   if (!initialLoadComplete || orderLoading) {
     return (
@@ -298,12 +315,12 @@ function OrderDetail() {
     : "N/A";
 
   const fullAddress = [
-    order.customerDetails?.provincia || order.customerDetails?.province,
-    order.customerDetails?.canton || order.customerDetails?.city,
-    order.customerDetails?.distrito,
-    order.customerDetails?.address,
+    order.user?.provincia || order.customerDetails?.provincia || order.customerDetails?.province,
+    order.user?.canton || order.customerDetails?.canton || order.customerDetails?.city,
+    order.user?.distrito || order.customerDetails?.distrito,
+    order.user?.address || order.customerDetails?.address,
   ]
-    .filter((part) => part && part !== "N/A")
+    .filter((part) => part && part !== "N/A" && part !== "undefined" && part !== "")
     .join(", ");
 
   const handlePrintLabel = () => {
@@ -341,17 +358,19 @@ function OrderDetail() {
               <p>TELÉFONO: <br/><span style="font-weight: normal; font-size: 18px;">${
                 order.customerDetails?.phoneNumber || "N/A"
               }</span></p>
-              <p>UBICACIÓN: <br/><span style="font-weight: normal; font-size: 16px;">${
+              <p>DIRECCIÓN: <br/><span style="font-weight: normal; font-size: 16px;">${
                 [
-                  order.customerDetails?.provincia || order.customerDetails?.province,
-                  order.customerDetails?.canton || order.customerDetails?.city,
-                  order.customerDetails?.distrito,
+                  order.user?.provincia ||
+                    order.customerDetails?.provincia ||
+                    order.customerDetails?.province,
+                  order.user?.canton ||
+                    order.customerDetails?.canton ||
+                    order.customerDetails?.city,
+                  order.user?.distrito || order.customerDetails?.distrito,
+                  order.user?.address || order.customerDetails?.address,
                 ]
-                  .filter((p) => p && p !== "N/A")
+                  .filter((p) => p && p !== "N/A" && p !== "undefined" && p !== "")
                   .join(", ") || "N/A"
-              }</span></p>
-              <p>DIRECCIÓN EXACTA: <br/><span style="font-weight: normal; font-size: 16px;">${
-                order.customerDetails?.address || "N/A"
               }</span></p>
             </div>
             <div class="footer">
@@ -365,6 +384,146 @@ function OrderDetail() {
       </html>
     `);
     printWindow.document.close();
+  };
+
+  const handlePrintSimplifiedTicket = () => {
+    const { itemsSubtotal, itemsTax, shippingBase, shippingTax, total } = displayBreakdown;
+    const isSimplified = order?.taxRegime === "simplified";
+    const company = systemEnv?.company || {
+      name: "SOFTWARE FACTORY ERP",
+      cedula: "3101750500",
+      codigoActividad: "620200",
+      address: "San José, Costa Rica",
+      phone: "22222222",
+      email: "info@empresa.cr",
+    };
+
+    const formatCurrency = (amount) => `₡${Math.round(amount).toLocaleString("es-CR")}`;
+
+    const htmlContent = `
+      <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 20px; background-color: #fff;">
+        <div style="max-width: 600px; margin: 0 auto; background: white;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px 20px; text-align: center; color: white; border-radius: 8px 8px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">¡Gracias por tu compra!</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Tu comprobante ha sido generado exitosamente</p>
+          </div>
+          
+          <div style="padding: 30px;">
+            <div style="background: #4caf50; color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: bold; display: inline-block; margin-bottom: 20px;">
+              ✅ PAGO APROBADO
+            </div>
+            
+            <div style="background: #f0f2f5; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-size: 13px; line-height: 1.4;">
+              <h3 style="margin: 0 0 10px 0; color: #333; font-size: 15px;">Información del Emisor</h3>
+              <strong>Nombre/Razón Social:</strong> ${company.name}<br>
+              <strong>Cédula:</strong> ${company.cedula}<br>
+              <strong>Código Actividad:</strong> ${company.codigoActividad}<br>
+              <strong>Dirección:</strong> ${company.address}<br>
+              <strong>Teléfono:</strong> ${company.phone}<br>
+              <strong>Email:</strong> ${company.email}
+            </div>
+
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #667eea;">
+              <h2 style="margin-top: 0; font-size: 20px;">Orden #${
+                order.orderNumber || order._id
+              }</h2>
+              <p style="margin: 5px 0;"><strong>Fecha:</strong> ${new Date(
+                order.createdAt
+              ).toLocaleDateString("es-CR")}</p>
+              <p style="margin: 5px 0;"><strong>Estado:</strong> Confirmada</p>
+              <p style="margin: 5px 0;"><strong>Método de pago:</strong> ${
+                order.paymentMethod || "Tilopay"
+              }</p>
+            </div>
+            
+            <h3 style="margin-top: 25px; margin-bottom: 10px;">Detalles de los productos:</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+              <thead>
+                <tr>
+                  <th style="background: #667eea; color: white; text-align: left; padding: 12px; font-weight: 600; border-radius: 6px 0 0 0;">Producto</th>
+                  <th style="background: #667eea; color: white; text-align: center; padding: 12px; font-weight: 600;">Cant.</th>
+                  <th style="background: #667eea; color: white; text-align: right; padding: 12px; font-weight: 600;">Precio</th>
+                  <th style="background: #667eea; color: white; text-align: right; padding: 12px; font-weight: 600; border-radius: 0 6px 0 0;">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${order.items
+                  .map(
+                    (item) => `
+                  <tr>
+                    <td style="padding: 12px; border-bottom: 1px solid #ddd;">
+                      <strong>${item.name || "Producto"}</strong>
+                      ${
+                        item.code
+                          ? `<br><small style="color: #666;">Código: ${item.code}</small>`
+                          : ""
+                      }
+                    </td>
+                    <td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: center;">${
+                      item.quantity
+                    }</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right;">${formatCurrency(
+                      item.priceAtSale
+                    )}</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right;">${formatCurrency(
+                      item.quantity * item.priceAtSale
+                    )}</td>
+                  </tr>
+                `
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+            
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-top: 20px; text-align: right;">
+              <div style="font-size: 24px; font-weight: bold; color: #2c5530;">Total: ${formatCurrency(
+                total
+              )}</div>
+              <div style="margin-top: 10px; font-size: 14px; color: #666;">
+                <div>Subtotal Productos: ${formatCurrency(itemsSubtotal)}</div>
+                ${
+                  !isSimplified
+                    ? `
+                    <div>IVA Productos (13%): ${formatCurrency(itemsTax)}</div>
+                    <div>Envío: ${formatCurrency(shippingBase)}</div>
+                    <div>IVA Envío (13%): ${formatCurrency(shippingTax)}</div>
+                  `
+                    : `
+                    <div>Envío: ${formatCurrency(shippingBase)}</div>
+                    <div style="margin-top: 10px; font-style: italic;">"Contribuyente inscrito en el Régimen de Tributación Simplificada"</div>
+                  `
+                }
+              </div>
+            </div>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 14px;">
+              <p><strong>SOFTWARE FACTORY ERP</strong></p>
+              <p>¡Gracias por su preferencia!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const element = document.createElement("div");
+    element.innerHTML = htmlContent;
+    document.body.appendChild(element);
+
+    const opt = {
+      margin: 10,
+      filename: `Comprobante_Pedido_${order.orderNumber || order._id}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    };
+
+    html2pdf()
+      .set(opt)
+      .from(element)
+      .save()
+      .then(() => {
+        document.body.removeChild(element);
+      });
   };
 
   return (
@@ -399,6 +558,15 @@ function OrderDetail() {
                     startIcon={<LocalPrintshopIcon />}
                   >
                     Imprimir Etiqueta
+                  </MDButton>
+                  <MDButton
+                    onClick={handlePrintSimplifiedTicket}
+                    variant="gradient"
+                    color="success"
+                    sx={{ mr: 1 }}
+                    startIcon={<LocalPrintshopIcon />}
+                  >
+                    Imprimir Comprobante
                   </MDButton>
                   {isEditable && (user?.role === "Administrador" || user?.role === "Editor") && (
                     <MDButton
@@ -453,15 +621,17 @@ function OrderDetail() {
                           maximumFractionDigits: 0,
                         })}
                       </MDTypography>
-                      <MDTypography variant="body2" color="text" mb={0.5}>
-                        IVA Productos (13%):{" "}
-                        {Math.round(displayBreakdown.itemsTax).toLocaleString("es-CR", {
-                          style: "currency",
-                          currency: "CRC",
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        })}
-                      </MDTypography>
+                      {order?.taxRegime !== "simplified" && (
+                        <MDTypography variant="body2" color="text" mb={0.5}>
+                          IVA Productos (13%):{" "}
+                          {Math.round(displayBreakdown.itemsTax).toLocaleString("es-CR", {
+                            style: "currency",
+                            currency: "CRC",
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })}
+                        </MDTypography>
+                      )}
                       <MDTypography variant="body2" color="text" mb={0.5}>
                         Envío (Correos de CR):{" "}
                         {Math.round(displayBreakdown.shippingBase).toLocaleString("es-CR", {
@@ -471,15 +641,17 @@ function OrderDetail() {
                           maximumFractionDigits: 0,
                         })}
                       </MDTypography>
-                      <MDTypography variant="body2" color="text" mb={0.5}>
-                        IVA Envío (13%):{" "}
-                        {Math.round(displayBreakdown.shippingTax).toLocaleString("es-CR", {
-                          style: "currency",
-                          currency: "CRC",
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        })}
-                      </MDTypography>
+                      {order?.taxRegime !== "simplified" && (
+                        <MDTypography variant="body2" color="text" mb={0.5}>
+                          IVA Envío (13%):{" "}
+                          {Math.round(displayBreakdown.shippingTax).toLocaleString("es-CR", {
+                            style: "currency",
+                            currency: "CRC",
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })}
+                        </MDTypography>
+                      )}
                       <MDBox mt={1} pt={1} borderTop="1px solid #eee">
                         <MDTypography variant="h6">
                           Total Pagado:{" "}
@@ -518,17 +690,20 @@ function OrderDetail() {
                     </MDTypography>
                     <MDTypography variant="body2" color="text" mb={0.5}>
                       <MDTypography component="span" variant="button" fontWeight="bold">
-                        Ubicación:
+                        Dirección:
                       </MDTypography>{" "}
-                      {order.customerDetails?.provincia || order.customerDetails?.province || "N/A"}
-                      , {order.customerDetails?.canton || order.customerDetails?.city || "N/A"},{" "}
-                      {order.customerDetails?.distrito || "N/A"}
-                    </MDTypography>
-                    <MDTypography variant="body2" color="text" mb={0.5}>
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        Dirección Exacta:
-                      </MDTypography>{" "}
-                      {order.customerDetails?.address || "N/A"}
+                      {[
+                        order.user?.provincia ||
+                          order.customerDetails?.provincia ||
+                          order.customerDetails?.province,
+                        order.user?.canton ||
+                          order.customerDetails?.canton ||
+                          order.customerDetails?.city,
+                        order.user?.distrito || order.customerDetails?.distrito,
+                        order.user?.address || order.customerDetails?.address,
+                      ]
+                        .filter((val) => val && val !== "N/A" && val !== "undefined" && val !== "")
+                        .join(", ") || "N/A"}
                     </MDTypography>
                   </Grid>
 
@@ -582,7 +757,9 @@ function OrderDetail() {
                               </MDTypography>
                             </MDBox>
                             <MDTypography variant="button" fontWeight="medium">
-                              Subtotal sin iva:{" "}
+                              {order?.taxRegime === "simplified"
+                                ? "Subtotal:"
+                                : "Subtotal sin iva:"}{" "}
                               {Math.round(item.quantity * item.priceAtSale).toLocaleString(
                                 "es-CR",
                                 {

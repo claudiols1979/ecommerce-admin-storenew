@@ -119,11 +119,21 @@ export default function ordersTableData(orders, currentUser, onStatusChange) {
       destination: (
         <MDBox display="flex" flexDirection="column">
           <MDTypography variant="caption" fontWeight="medium" color="text">
-            {order.customerDetails?.provincia || order.customerDetails?.province || "N/A"}
+            {[
+              order.user?.provincia ||
+                order.customerDetails?.provincia ||
+                order.customerDetails?.province,
+              order.user?.canton || order.customerDetails?.canton || order.customerDetails?.city,
+              order.user?.distrito || order.customerDetails?.distrito,
+            ]
+              .filter((val) => val && val !== "N/A" && val !== "" && val !== "undefined")
+              .join(", ") || "N/A"}
           </MDTypography>
           <MDTypography variant="caption" color="text">
-            {order.customerDetails?.canton || order.customerDetails?.city || "N/A"},{" "}
-            {order.customerDetails?.distrito || "N/A"}
+            {order.user?.address ||
+              (order.customerDetails?.address && order.customerDetails?.address !== "N/A"
+                ? order.customerDetails.address
+                : "")}
           </MDTypography>
         </MDBox>
       ),

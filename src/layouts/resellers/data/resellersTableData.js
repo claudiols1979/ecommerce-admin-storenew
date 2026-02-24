@@ -202,12 +202,19 @@ export const resellersTableColumns = [
   },
   {
     Header: "Dirección",
-    accessor: "address",
+    accessor: "addressInfo",
     width: "20%",
     Cell: ({ cell: { value } }) => (
-      <MDTypography variant="caption" color="text" fontWeight="medium">
-        {value || "N/A"}
-      </MDTypography>
+      <MDBox display="flex" flexDirection="column">
+        <MDTypography variant="caption" fontWeight="medium" color="text">
+          {[value.provincia, value.canton, value.distrito]
+            .filter((val) => val && val !== "N/A" && val !== "")
+            .join(", ") || "Sin ubicación"}
+        </MDTypography>
+        <MDTypography variant="caption" color="text">
+          {value.address || ""}
+        </MDTypography>
+      </MDBox>
     ),
   },
   {
@@ -239,7 +246,12 @@ export const resellersTableRows = (
     resellerCode: reseller.resellerCode,
     resellerCategory: reseller.resellerCategory,
     phoneNumber: reseller.phoneNumber,
-    address: reseller.address,
+    addressInfo: {
+      provincia: reseller.provincia || reseller.province,
+      canton: reseller.canton || reseller.city,
+      distrito: reseller.distrito,
+      address: reseller.address,
+    },
     isBlocked: (
       <StatusToggleCell
         isBlocked={reseller.isBlocked || false}

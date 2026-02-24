@@ -33,12 +33,14 @@ import Footer from "examples/Footer";
 import { useOrders } from "contexts/OrderContext"; // Consuming OrderContext
 import { useProducts } from "contexts/ProductContext"; // Assuming you have a ProductContext for product selection
 import { useAuth } from "contexts/AuthContext"; // To get resellerCategory for pricing
+import { useConfig } from "contexts/ConfigContext";
 
 function CreateOrder() {
   const navigate = useNavigate();
   const { placeOrder, loading: orderLoading } = useOrders(); // Using placeOrder from OrderContext
   const { products, loading: productsLoading, error: productsError } = useProducts(); // Fetching products from ProductContext
   const { user } = useAuth(); // Get current user for reseller category
+  const { taxRegime } = useConfig();
 
   // Removed customer details states as they will be derived from req.user on backend
   // const [customerName, setCustomerName] = useState("");
@@ -61,6 +63,7 @@ function CreateOrder() {
   };
 
   const calculateItemsIVA = () => {
+    if (taxRegime === "simplified") return 0;
     return cartItems.reduce((total, item) => {
       const taxRate =
         (parseFloat(item.product?.iva) !== undefined && item.product?.iva !== ""
@@ -165,7 +168,7 @@ function CreateOrder() {
       base = base1kg + extraKilos * extraKiloRate;
     }
 
-    const tax = Math.round(base * 0.13);
+    const tax = taxRegime === "simplified" ? 0 : Math.round(base * 0.13);
     return { base, tax, total: base + tax };
   };
 
@@ -564,19 +567,21 @@ function CreateOrder() {
                               })}
                             </MDTypography>
                           </MDBox>
-                          <MDBox display="flex" justifyContent="space-between" mb={0.5}>
-                            <MDTypography variant="button" color="text">
-                              IVA Productos:
-                            </MDTypography>
-                            <MDTypography variant="button" fontWeight="medium">
-                              {Math.round(getFullBreakdown().iva).toLocaleString("es-CR", {
-                                style: "currency",
-                                currency: "CRC",
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              })}
-                            </MDTypography>
-                          </MDBox>
+                          {taxRegime !== "simplified" && (
+                            <MDBox display="flex" justifyContent="space-between" mb={0.5}>
+                              <MDTypography variant="button" color="text">
+                                IVA Productos:
+                              </MDTypography>
+                              <MDTypography variant="button" fontWeight="medium">
+                                {Math.round(getFullBreakdown().iva).toLocaleString("es-CR", {
+                                  style: "currency",
+                                  currency: "CRC",
+                                  minimumFractionDigits: 0,
+                                  maximumFractionDigits: 0,
+                                })}
+                              </MDTypography>
+                            </MDBox>
+                          )}
                           <MDBox display="flex" justifyContent="space-between" mb={0.5}>
                             <MDTypography variant="button" color="text">
                               Envío (Correos de CR):
@@ -590,19 +595,24 @@ function CreateOrder() {
                               })}
                             </MDTypography>
                           </MDBox>
-                          <MDBox display="flex" justifyContent="space-between" mb={0.5}>
-                            <MDTypography variant="button" color="text">
-                              IVA Envío (13%):
-                            </MDTypography>
-                            <MDTypography variant="button" fontWeight="medium">
-                              {Math.round(getFullBreakdown().shippingTax).toLocaleString("es-CR", {
-                                style: "currency",
-                                currency: "CRC",
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              })}
-                            </MDTypography>
-                          </MDBox>
+                          {taxRegime !== "simplified" && (
+                            <MDBox display="flex" justifyContent="space-between" mb={0.5}>
+                              <MDTypography variant="button" color="text">
+                                IVA Envío (13%):
+                              </MDTypography>
+                              <MDTypography variant="button" fontWeight="medium">
+                                {Math.round(getFullBreakdown().shippingTax).toLocaleString(
+                                  "es-CR",
+                                  {
+                                    style: "currency",
+                                    currency: "CRC",
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 0,
+                                  }
+                                )}
+                              </MDTypography>
+                            </MDBox>
+                          )}
                           <MDBox
                             mt={1}
                             pt={1}
@@ -620,6 +630,15 @@ function CreateOrder() {
                               })}
                             </MDTypography>
                           </MDBox>
+                          {taxRegime === "simplified" && (
+                            <MDTypography
+                              variant="caption"
+                              color="text"
+                              sx={{ fontStyle: "italic", mb: 1, display: "block" }}
+                            >
+                              Régimen Simplificado (Impuestos incluidos en costo de envío)
+                            </MDTypography>
+                          )}
                           <MDTypography
                             variant="caption"
                             color="text"

@@ -1,6 +1,6 @@
 // frontend/src/layouts/resellers/templates/ResellerDetail.js
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -156,6 +156,46 @@ function ResellerDetail() {
     }
   };
 
+  // Memoize table headers and rows for electronic invoices
+  const invoicesTableData = useMemo(
+    () => ({
+      columns: [
+        { Header: "Fecha", accessor: "date", align: "left" },
+        { Header: "Tipo", accessor: "type", align: "left" },
+        { Header: "Total", accessor: "total", align: "center" },
+        { Header: "Estado", accessor: "status", align: "center" },
+        { Header: "Consecutivo", accessor: "consecutivo", align: "center" },
+        { Header: "Clave", accessor: "clave", align: "center" },
+      ],
+      rows: invoices.map((inv) => ({
+        date: new Date(inv.fechaEmision).toLocaleString("es-CR"),
+        type: inv.tipoDocumento === "01" ? "Factura Electrónica" : "Tiquete Electrónico",
+        total: `₡${inv.totalComprobante?.toLocaleString("es-CR")}`,
+        status: (
+          <MDTypography
+            variant="caption"
+            color={inv.estado === "error" ? "error" : "success"}
+            fontWeight="medium"
+          >
+            {inv.estado.toUpperCase()}
+          </MDTypography>
+        ),
+        consecutivo: inv.consecutivo || "N/A",
+        clave: inv.clave ? (
+          <MDTypography
+            variant="caption"
+            sx={{ wordBreak: "break-all", display: "block", maxWidth: "150px" }}
+          >
+            {inv.clave}
+          </MDTypography>
+        ) : (
+          "N/A"
+        ),
+      })),
+    }),
+    [invoices]
+  );
+
   // Show loading for initial data fetch
   if (contextLoading && !reseller && !fetchError) {
     return (
@@ -287,7 +327,19 @@ function ResellerDetail() {
                       Categoría:
                     </MDTypography>
                     <MDTypography variant="body2">
-                      {reseller.resellerCategory?.toUpperCase()}
+                      {(() => {
+                        const categories = {
+                          cat1: "Nivel 1",
+                          cat2: "Nivel 2",
+                          cat3: "Nivel 3",
+                          cat4: "Nivel 4",
+                          cat5: "Nivel 5",
+                        };
+                        return (
+                          categories[reseller.resellerCategory?.toLowerCase()] ||
+                          reseller.resellerCategory?.toUpperCase()
+                        );
+                      })()}
                     </MDTypography>
                   </Grid>
                   <Grid item xs={12} sm={6}>
@@ -301,9 +353,9 @@ function ResellerDetail() {
                       Dirección Completa:
                     </MDTypography>
                     <MDTypography variant="body2">
-                      {reseller.provincia
-                        ? `${reseller.provincia}, ${reseller.canton}, ${reseller.distrito}`
-                        : "Sin provincia/cantón/distrito"}
+                      {[reseller.provincia, reseller.canton, reseller.distrito]
+                        .filter((val) => val && val !== "N/A" && val !== "")
+                        .join(", ") || "Sin ubicación"}
                     </MDTypography>
                     <MDTypography variant="body2">
                       Otras señas: {reseller.address || "N/A"}
@@ -355,44 +407,7 @@ function ResellerDetail() {
                   </MDBox>
                 ) : (
                   <DataTable
-                    table={{
-                      columns: [
-                        { Header: "Fecha", accessor: "date", align: "left" },
-                        { Header: "Tipo", accessor: "type", align: "left" },
-                        { Header: "Total", accessor: "total", align: "center" },
-                        { Header: "Estado", accessor: "status", align: "center" },
-                        { Header: "Consecutivo", accessor: "consecutivo", align: "center" },
-                        { Header: "Clave", accessor: "clave", align: "center" },
-                      ],
-                      rows: invoices.map((inv) => ({
-                        date: new Date(inv.fechaEmision).toLocaleString("es-CR"),
-                        type:
-                          inv.tipoDocumento === "01"
-                            ? "Factura Electrónica"
-                            : "Tiquete Electrónico",
-                        total: `₡${inv.totalComprobante?.toLocaleString("es-CR")}`,
-                        status: (
-                          <MDTypography
-                            variant="caption"
-                            color={inv.estado === "error" ? "error" : "success"}
-                            fontWeight="medium"
-                          >
-                            {inv.estado.toUpperCase()}
-                          </MDTypography>
-                        ),
-                        consecutivo: inv.consecutivo || "N/A",
-                        clave: inv.clave ? (
-                          <MDTypography
-                            variant="caption"
-                            sx={{ wordBreak: "break-all", display: "block", maxWidth: "150px" }}
-                          >
-                            {inv.clave}
-                          </MDTypography>
-                        ) : (
-                          "N/A"
-                        ),
-                      })),
-                    }}
+                    table={invoicesTableData}
                     isSorted={false}
                     entriesPerPage={true}
                     showTotalEntries={true}

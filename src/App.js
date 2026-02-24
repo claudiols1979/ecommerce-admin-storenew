@@ -41,6 +41,7 @@ import { ResellerProvider } from "contexts/ResellerContext"; // NEW: ResellerPro
 import { HeroCarouselProvider } from "contexts/HeroCarouselContext";
 import { AdGridProvider } from "contexts/AdGridContext";
 import { VideoProvider } from "contexts/VideoContext";
+import { ConfigProvider } from "contexts/ConfigContext";
 
 // Protected Route utility
 import ProtectedRoute from "utils/ProtectedRoute";
@@ -70,6 +71,7 @@ import CreateReseller from "layouts/resellers/templates/CreateReseller";
 import EditReseller from "layouts/resellers/templates/EditReseller";
 import ResellerDetail from "layouts/resellers/templates/ResellerDetail";
 import Profile from "layouts/profile";
+import Administration from "layouts/administration";
 
 // Variantes
 import Variants from "layouts/variants";
@@ -353,6 +355,14 @@ function MainAppContent() {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/administration"
+                  element={
+                    <ProtectedRoute allowedRoles={["Administrador"]}>
+                      <Administration />
+                    </ProtectedRoute>
+                  }
+                />
                 {/* Fallback for authenticated users */}
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Routes>
@@ -389,21 +399,23 @@ function MainAppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <ProductProvider>
-        <OrderProvider>
-          <DashboardProvider>
-            <ResellerProvider>
-              <HeroCarouselProvider>
-                <AdGridProvider>
-                  <VideoProvider>
-                    <MainAppContent />
-                  </VideoProvider>
-                </AdGridProvider>
-              </HeroCarouselProvider>
-            </ResellerProvider>
-          </DashboardProvider>
-        </OrderProvider>
-      </ProductProvider>
+      <ConfigProvider>
+        <ProductProvider>
+          <OrderProvider>
+            <DashboardProvider>
+              <ResellerProvider>
+                <HeroCarouselProvider>
+                  <AdGridProvider>
+                    <VideoProvider>
+                      <MainAppContent />
+                    </VideoProvider>
+                  </AdGridProvider>
+                </HeroCarouselProvider>
+              </ResellerProvider>
+            </DashboardProvider>
+          </OrderProvider>
+        </ProductProvider>
+      </ConfigProvider>
     </AuthProvider>
   );
 }

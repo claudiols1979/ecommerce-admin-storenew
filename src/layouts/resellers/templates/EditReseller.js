@@ -205,6 +205,46 @@ function EditReseller() {
     }
   };
 
+  // Memoize table headers and rows for electronic invoices
+  const invoicesTableData = useMemo(
+    () => ({
+      columns: [
+        { Header: "Fecha", accessor: "date", align: "left" },
+        { Header: "Tipo", accessor: "type", align: "left" },
+        { Header: "Total", accessor: "total", align: "center" },
+        { Header: "Estado", accessor: "status", align: "center" },
+        { Header: "Consecutivo", accessor: "consecutivo", align: "center" },
+        { Header: "Clave", accessor: "clave", align: "center" },
+      ],
+      rows: invoices.map((inv) => ({
+        date: new Date(inv.fechaEmision).toLocaleString("es-CR"),
+        type: inv.tipoDocumento === "01" ? "Factura Electrónica" : "Tiquete Electrónico",
+        total: `₡${inv.totalComprobante?.toLocaleString("es-CR")}`,
+        status: (
+          <MDTypography
+            variant="caption"
+            color={inv.estado === "error" ? "error" : "success"}
+            fontWeight="medium"
+          >
+            {inv.estado.toUpperCase()}
+          </MDTypography>
+        ),
+        consecutivo: inv.consecutivo || "N/A",
+        clave: inv.clave ? (
+          <MDTypography
+            variant="caption"
+            sx={{ wordBreak: "break-all", display: "block", maxWidth: "150px" }}
+          >
+            {inv.clave}
+          </MDTypography>
+        ) : (
+          "N/A"
+        ),
+      })),
+    }),
+    [invoices]
+  );
+
   // Show loading spinner for initial data fetch
   if (initialDataLoading) {
     return (
@@ -430,44 +470,7 @@ function EditReseller() {
                   </MDBox>
                 ) : (
                   <DataTable
-                    table={{
-                      columns: [
-                        { Header: "Fecha", accessor: "date", align: "left" },
-                        { Header: "Tipo", accessor: "type", align: "left" },
-                        { Header: "Total", accessor: "total", align: "center" },
-                        { Header: "Estado", accessor: "status", align: "center" },
-                        { Header: "Consecutivo", accessor: "consecutivo", align: "center" },
-                        { Header: "Clave", accessor: "clave", align: "center" },
-                      ],
-                      rows: invoices.map((inv) => ({
-                        date: new Date(inv.fechaEmision).toLocaleString("es-CR"),
-                        type:
-                          inv.tipoDocumento === "01"
-                            ? "Factura Electrónica"
-                            : "Tiquete Electrónico",
-                        total: `₡${inv.totalComprobante?.toLocaleString("es-CR")}`,
-                        status: (
-                          <MDTypography
-                            variant="caption"
-                            color={inv.estado === "error" ? "error" : "success"}
-                            fontWeight="medium"
-                          >
-                            {inv.estado.toUpperCase()}
-                          </MDTypography>
-                        ),
-                        consecutivo: inv.consecutivo || "N/A",
-                        clave: inv.clave ? (
-                          <MDTypography
-                            variant="caption"
-                            sx={{ wordBreak: "break-all", display: "block", maxWidth: "150px" }}
-                          >
-                            {inv.clave}
-                          </MDTypography>
-                        ) : (
-                          "N/A"
-                        ),
-                      })),
-                    }}
+                    table={invoicesTableData}
                     isSorted={false}
                     entriesPerPage={true}
                     showTotalEntries={true}

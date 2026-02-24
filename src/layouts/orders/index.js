@@ -79,7 +79,6 @@ function Orders() {
   useEffect(() => {
     fetchOrders(page, limit, sort, searchTerm, !showPending);
     const intervalId = setInterval(() => {
-      console.log("Auto-refreshing dashboard data...");
       fetchOrders(page, limit, sort, searchTerm, !showPending);
     }, 30000); // 30000 milliseconds = 30 seconds
 
@@ -339,9 +338,9 @@ function Orders() {
         <DialogContent>
           <MDBox pt={2} px={1}>
             <MDTypography variant="body2" color="text" mb={3}>
-              Esta acción eliminará todos los pedidos con estado <strong>"Pendiente"</strong> que
-              hayan sido creados en el rango de fechas seleccionado. Esta acción{" "}
-              <strong>no se puede deshacer</strong>.
+              Esta acción eliminará todos los pedidos con estado{" "}
+              <strong>&quot;Pendiente&quot;</strong> que hayan sido creados en el rango de fechas
+              seleccionado. Esta acción <strong>no se puede deshacer</strong>.
             </MDTypography>
             <Grid container spacing={3}>
               <Grid item xs={12} sm={6}>
