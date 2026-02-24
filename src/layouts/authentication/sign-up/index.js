@@ -2,15 +2,6 @@
 =========================================================
 * Material Dashboard 2 React - v2.2.0
 =========================================================
-
-* Product Page: https://www.creative-tim.com/product/material-dashboard-react
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
-=========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 */
 
 import { useState } from "react";
@@ -21,10 +12,8 @@ import { Link } from "react-router-dom";
 // @mui material components
 import Card from "@mui/material/Card";
 import Checkbox from "@mui/material/Checkbox";
-import InputLabel from "@mui/material/InputLabel"; // <--- NEW: For select input label
-import Select from "@mui/material/Select"; // <--- NEW: For dropdown select
-import MenuItem from "@mui/material/MenuItem"; // <--- NEW: For dropdown options
-import FormControl from "@mui/material/FormControl"; // <--- NEW: For select wrapping
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -41,15 +30,64 @@ import bgImage from "assets/images/bg-sign-up-cover.jpeg";
 // Import useAuth from your AuthContext
 import { useAuth } from "contexts/AuthContext";
 
+const glassCardSx = {
+  backgroundColor: "rgba(255, 255, 255, 0.1) !important",
+  backdropFilter: "blur(24px)",
+  WebkitBackdropFilter: "blur(24px)",
+  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important",
+  border: "1px solid rgba(255, 255, 255, 0.2)",
+  color: "#fff",
+};
+
+const glassInputSx = {
+  "& .MuiOutlinedInput-root, & .MuiInput-root, & .MuiFilledInput-root": {
+    borderRadius: "12px",
+    backgroundColor: "rgba(255, 255, 255, 0.12)",
+    color: "#fff",
+    "& fieldset": {
+      borderColor: "rgba(255, 255, 255, 0.3)",
+    },
+    "&:hover fieldset": {
+      borderColor: "rgba(255, 255, 255, 0.6)",
+    },
+    "&.Mui-focused fieldset": {
+      borderColor: "rgba(255, 255, 255, 0.8)",
+    },
+    "&::before": {
+      borderBottomColor: "rgba(255, 255, 255, 0.3) !important",
+    },
+    "&::after": {
+      borderBottomColor: "#ffffff !important",
+    },
+    "&:hover:not(.Mui-disabled)::before": {
+      borderBottomColor: "rgba(255, 255, 255, 0.6) !important",
+    },
+    "& input": {
+      color: "#fff !important",
+    },
+  },
+  "& .MuiInputLabel-root": {
+    color: "rgba(255, 255, 255, 0.7) !important",
+  },
+  "& .MuiInputLabel-root.Mui-focused": {
+    color: "#ffffff !important",
+  },
+  "& .MuiSelect-icon": {
+    color: "rgba(255, 255, 255, 0.7)",
+  },
+  "& .MuiSelect-select": {
+    color: "#fff !important",
+  },
+};
+
 function Cover() {
-  // --- Form State: Updated for firstName, lastName, and role ---
+  // --- Form State ---
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("Editor"); // Default to Editor, as per requirement
+  const [role, setRole] = useState("Editor");
   const [agreement, setAgreement] = useState(false);
-  // --- End Form State ---
 
   // Get the register function and loading state from your AuthContext
   const { register, loading } = useAuth();
@@ -60,134 +98,154 @@ function Cover() {
   const handleRegister = async (event) => {
     event.preventDefault();
 
-    // Basic client-side validation
     if (!firstName || !lastName || !email || !password || !role) {
-      alert("Por favor, complete todos los campos requeridos y acepte los términos."); // Spanish message
+      alert("Por favor, complete todos los campos requeridos y acepte los términos.");
       return;
     }
 
-    // Call the register function from AuthContext with the new parameters
     const result = await register(firstName, lastName, email, password, role);
 
     if (result.success) {
-      // Clear form fields on successful registration
       setFirstName("");
       setLastName("");
       setEmail("");
       setPassword("");
-      setRole("Editor"); // Reset to default
+      setRole("Editor");
       setAgreement(false);
     }
   };
-  // --- End Handle Form Submission ---
 
   return (
     <CoverLayout image={bgImage}>
-      <Card>
+      <Card sx={glassCardSx}>
         <MDBox
           variant="gradient"
-          bgColor="info"
           borderRadius="lg"
-          coloredShadow="success"
           mx={2}
           mt={-3}
           p={3}
           mb={1}
           textAlign="center"
+          sx={{
+            background: "linear-gradient(135deg, #9b2fbe 0%, #c471ed 50%, #e056a0 100%)",
+            boxShadow: "0 4px 20px rgba(180, 60, 160, 0.5)",
+          }}
         >
           <MDTypography variant="h4" fontWeight="medium" color="white" mt={1}>
             Únete a nosotros hoy
-          </MDTypography>{" "}
-          {/* Spanish */}
+          </MDTypography>
           <MDTypography display="block" variant="button" color="white" my={1}>
             Ingrese su información para registrarse
-          </MDTypography>{" "}
-          {/* Spanish */}
+          </MDTypography>
         </MDBox>
         <MDBox pt={4} pb={3} px={3}>
           <MDBox component="form" role="form" onSubmit={handleRegister}>
             <MDBox mb={2}>
               <MDInput
                 type="text"
-                label="Nombre" // Spanish label
+                label="Nombre"
                 variant="standard"
                 fullWidth
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                required // Mark as required
+                required
+                sx={glassInputSx}
               />
             </MDBox>
             <MDBox mb={2}>
               <MDInput
                 type="text"
-                label="Apellido" // Spanish label
+                label="Apellido"
                 variant="standard"
                 fullWidth
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                required // Mark as required
+                required
+                sx={glassInputSx}
               />
             </MDBox>
             <MDBox mb={2}>
               <MDInput
                 type="email"
-                label="Correo Electrónico" // Spanish label
+                label="Correo Electrónico"
                 variant="standard"
                 fullWidth
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required // Mark as required
+                required
+                sx={glassInputSx}
               />
             </MDBox>
             <MDBox mb={2}>
               <MDInput
                 type="password"
-                label="Contraseña" // Spanish label
+                label="Contraseña"
                 variant="standard"
                 fullWidth
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required // Mark as required
+                required
+                sx={glassInputSx}
               />
             </MDBox>
-            {/* --- NEW: Role selection dropdown --- */}
+            {/* Role selection dropdown */}
             <MDBox mb={2}>
-              <FormControl variant="standard" fullWidth>
-                <InputLabel id="role-select-label">Rol</InputLabel> {/* Spanish label */}
-                <Select
-                  labelId="role-select-label"
-                  id="role-select"
-                  value={role}
-                  label="Role"
-                  onChange={(e) => setRole(e.target.value)}
-                >
-                  <MenuItem value="Administrador">Administrador</MenuItem>
-                  <MenuItem value="Editor">Editor</MenuItem>
-                </Select>
-              </FormControl>
+              <TextField
+                select
+                variant="standard"
+                fullWidth
+                id="role-select"
+                value={role}
+                label="Rol"
+                onChange={(e) => setRole(e.target.value)}
+                sx={glassInputSx}
+              >
+                <MenuItem value="Administrador">Administrador</MenuItem>
+                <MenuItem value="Editor">Editor</MenuItem>
+              </TextField>
             </MDBox>
-            {/* --- END NEW: Role selection --- */}
 
             <MDBox display="flex" alignItems="center" ml={-1}></MDBox>
             <MDBox mt={4} mb={1}>
-              <MDButton variant="gradient" color="info" fullWidth type="submit" disabled={loading}>
-                {loading ? "Registrando..." : "Registrarse"} {/* Spanish button text */}
+              <MDButton
+                fullWidth
+                type="submit"
+                disabled={loading}
+                sx={{
+                  background:
+                    "linear-gradient(135deg, #9b2fbe 0%, #c471ed 50%, #e056a0 100%) !important",
+                  color: "#fff !important",
+                  borderRadius: "12px",
+                  fontWeight: "bold",
+                  fontSize: "0.9rem",
+                  padding: "12px",
+                  boxShadow: "0 4px 20px rgba(180, 60, 160, 0.5)",
+                  "&:hover": {
+                    background:
+                      "linear-gradient(135deg, #c471ed 0%, #e056a0 50%, #f64f59 100%) !important",
+                    boxShadow: "0 6px 30px rgba(180, 60, 160, 0.7)",
+                    transform: "translateY(-2px)",
+                  },
+                }}
+              >
+                {loading ? "Registrando..." : "Registrarse"}
               </MDButton>
             </MDBox>
             <MDBox mt={3} mb={1} textAlign="center">
-              <MDTypography variant="button" color="text">
-                ¿Ya tienes una cuenta? {/* Spanish */}
+              <MDTypography variant="button" sx={{ color: "rgba(255, 255, 255, 0.7) !important" }}>
+                ¿Ya tienes una cuenta?{" "}
                 <MDTypography
                   component={Link}
                   to="/authentication/sign-in"
                   variant="button"
-                  color="info"
                   fontWeight="medium"
-                  textGradient
+                  sx={{
+                    color: "#fff !important",
+                    "&:hover": { color: "rgba(255,255,255,0.9) !important" },
+                  }}
                 >
                   Iniciar Sesión
-                </MDTypography>{" "}
-                {/* Spanish */}
+                </MDTypography>
               </MDTypography>
             </MDBox>
           </MDBox>

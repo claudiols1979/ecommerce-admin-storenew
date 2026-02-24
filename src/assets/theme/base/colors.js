@@ -55,8 +55,8 @@ const colors = {
   },
 
   info: {
-    main: "#1A73E8",
-    focus: "#1662C4",
+    main: "#b43ca0", // Un punto medio del gradiente para color sólido
+    focus: "#9b2fbe",
   },
 
   success: {
@@ -108,8 +108,8 @@ const colors = {
     },
 
     info: {
-      main: "#49a3f1",
-      state: "#1A73E8",
+      main: "#9b2fbe",
+      state: "#e056a0",
     },
 
     success: {

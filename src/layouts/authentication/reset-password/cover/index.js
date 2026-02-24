@@ -15,6 +15,9 @@ import MDButton from "components/MDButton";
 // Authentication layout components
 import CoverLayout from "layouts/authentication/components/CoverLayout";
 
+// Components
+import AuthBranding from "components/common/AuthBranding";
+
 // Images
 import bgImage from "assets/images/bg-reset-cover.jpeg";
 
@@ -60,57 +63,101 @@ function ForgotPasswordCover() {
 
   return (
     <CoverLayout coverHeight="50vh" image={bgImage}>
-      <Card>
-        <MDBox
-          variant="gradient"
-          bgColor="info"
-          borderRadius="lg"
-          coloredShadow="success"
-          mx={2}
-          mt={-3}
-          py={2}
-          mb={1}
-          textAlign="center"
-        >
-          <MDTypography variant="h3" fontWeight="medium" color="white" mt={1}>
+      <Card
+        sx={{
+          backgroundColor: "rgba(255, 255, 255, 0.1) !important",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+          boxShadow:
+            "0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important",
+          border: "1px solid rgba(255, 255, 255, 0.2)",
+          color: "#fff",
+        }}
+      >
+        <MDBox pt={4} pb={3} px={3}>
+          <AuthBranding lightMode={true} />
+
+          <MDTypography variant="h5" fontWeight="medium" color="white" mt={2} textAlign="center">
             Restablecer Contraseña
           </MDTypography>
-          <MDTypography display="block" variant="button" color="white" my={1}>
+          <MDTypography
+            display="block"
+            variant="button"
+            color="white"
+            my={1}
+            textAlign="center"
+            sx={{ opacity: 0.8 }}
+          >
             Recibirás un correo con las instrucciones.
           </MDTypography>
-        </MDBox>
-        <MDBox pt={4} pb={3} px={3}>
+
           {message && (
-            <Alert severity="success" sx={{ mb: 2 }}>
+            <Alert
+              severity="success"
+              sx={{
+                mb: 2,
+                mt: 3,
+                backgroundColor: "rgba(76, 175, 80, 0.2)",
+                color: "#fff",
+                border: "1px solid #4caf50",
+              }}
+            >
               {message}
             </Alert>
           )}
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert
+              severity="error"
+              sx={{
+                mb: 2,
+                mt: 3,
+                backgroundColor: "rgba(244, 67, 54, 0.2)",
+                color: "#fff",
+                border: "1px solid #f44336",
+              }}
+            >
               {error}
             </Alert>
           )}
 
-          <MDBox component="form" role="form" onSubmit={handleSubmit}>
+          <MDBox component="form" role="form" onSubmit={handleSubmit} mt={3}>
             <MDBox mb={4}>
               <MDInput
                 type="email"
                 label="Email"
-                variant="standard"
                 fullWidth
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                disabled={isSending || !!message} // Disable if sending or successful
+                disabled={isSending || !!message}
+                sx={{
+                  "& .MuiOutlinedInput-root, & .MuiInput-root": {
+                    color: "#fff",
+                    "&::before": { borderBottomColor: "rgba(255, 255, 255, 0.3) !important" },
+                    "&::after": { borderBottomColor: "#ffffff !important" },
+                    "&:hover:not(.Mui-disabled)::before": {
+                      borderBottomColor: "rgba(255, 255, 255, 0.6) !important",
+                    },
+                  },
+                  "& .MuiInputLabel-root": { color: "rgba(255, 255, 255, 0.7) !important" },
+                  "& .MuiInputLabel-root.Mui-focused": { color: "#ffffff !important" },
+                }}
               />
             </MDBox>
             <MDBox mt={6} mb={1}>
               <MDButton
                 variant="gradient"
-                color="info"
                 fullWidth
                 type="submit"
                 disabled={isSending || !!message}
+                sx={{
+                  background: "linear-gradient(135deg, #9b2fbe 0%, #c471ed 50%, #e056a0 100%)",
+                  color: "#fff",
+                  boxShadow: "0 4px 20px rgba(180, 60, 160, 0.5)",
+                  "&:hover": {
+                    background: "linear-gradient(135deg, #c471ed 0%, #e056a0 50%, #f64f59 100%)",
+                  },
+                }}
               >
                 {isSending ? <CircularProgress size={24} color="inherit" /> : "Enviar Enlace"}
               </MDButton>
@@ -120,9 +167,9 @@ function ForgotPasswordCover() {
                 component={Link}
                 to="/authentication/sign-in"
                 variant="button"
-                color="info"
+                color="white"
                 fontWeight="medium"
-                textGradient
+                sx={{ "&:hover": { opacity: 0.8 } }}
               >
                 Volver a Iniciar Sesión
               </MDTypography>

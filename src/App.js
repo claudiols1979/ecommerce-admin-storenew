@@ -71,6 +71,10 @@ import EditReseller from "layouts/resellers/templates/EditReseller";
 import ResellerDetail from "layouts/resellers/templates/ResellerDetail";
 import Profile from "layouts/profile";
 
+// Variantes
+import Variants from "layouts/variants";
+import CreateProductWithVariants from "layouts/products/templates/CreateProductWithVariants";
+
 // Main application content component (wrapped by all necessary Providers)
 function MainAppContent() {
   const [controller, dispatch] = useMaterialUIController();
@@ -226,6 +230,22 @@ function MainAppContent() {
                   element={
                     <ProtectedRoute allowedRoles={["Administrador"]}>
                       <CreateProduct />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/products/create-batch"
+                  element={
+                    <ProtectedRoute allowedRoles={["Administrador", "Editor"]}>
+                      <CreateProductWithVariants />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/variants"
+                  element={
+                    <ProtectedRoute allowedRoles={["Administrador", "Editor"]}>
+                      <Variants />
                     </ProtectedRoute>
                   }
                 />

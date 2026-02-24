@@ -84,7 +84,7 @@ function HeroCarousel() {
           <MDBox
             mb={3}
             p={2}
-            sx={{ border: "1px solid #f44336", borderRadius: 1, bgcolor: "#ffebee" }}
+            sx={{ border: "1px solid", borderColor: "error.main", borderRadius: 1 }}
           >
             <MDTypography color="error" variant="body2" gutterBottom>
               Error: {typeof error === "object" ? error.message : error}

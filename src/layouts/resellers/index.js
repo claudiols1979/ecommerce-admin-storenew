@@ -41,7 +41,8 @@ import { resellersTableColumns, resellersTableRows } from "./data/resellersTable
 
 function Resellers() {
   const navigate = useNavigate();
-  const { resellers, loading, error, deleteReseller, resetResellerCode } = useResellers();
+  const { resellers, loading, error, deleteReseller, resetResellerCode, toggleUserBlock } =
+    useResellers();
   const { user } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -146,6 +147,7 @@ function Resellers() {
       filteredResellers,
       handleDeleteReseller,
       handleResetCode,
+      toggleUserBlock,
       canManageResellers,
       canDeleteResellers
     );
@@ -153,6 +155,7 @@ function Resellers() {
     filteredResellers,
     handleDeleteReseller,
     handleResetCode,
+    toggleUserBlock,
     canManageResellers,
     canDeleteResellers,
   ]);
@@ -165,7 +168,7 @@ function Resellers() {
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
           <CircularProgress color="info" />
           <MDTypography variant="h5" ml={2}>
-            Cargando revendedores...
+            Cargando clientes...
           </MDTypography>
         </Box>
         <Footer />
@@ -232,28 +235,29 @@ function Resellers() {
           <Grid item xs={12}>
             <Card>
               <MDBox
+                variant="gradient"
+                borderRadius="lg"
                 mx={2}
                 mt={-3}
                 py={3}
                 px={2}
-                variant="gradient"
-                bgColor="info"
-                borderRadius="lg"
-                coloredShadow="info"
                 display="flex"
                 justifyContent="space-between"
                 alignItems="center"
+                sx={{
+                  background: "linear-gradient(135deg, #9b2fbe 0%, #c471ed 50%, #e056a0 100%)",
+                  boxShadow: "0 4px 20px rgba(180, 60, 160, 0.5)",
+                }}
               >
                 <MDTypography variant="h6" color="white">
-                  Gestión de Revendedores
+                  Gestión de Clientes
                 </MDTypography>
-                
               </MDBox>
               <MDBox p={3}>
                 {/* Search Input */}
                 <MDBox mb={3}>
                   <TextField
-                    label="Buscar revendedor por nombre, correo, código, etc."
+                    label="Buscar cliente por nombre, correo, código, etc."
                     variant="outlined"
                     fullWidth
                     value={searchTerm}

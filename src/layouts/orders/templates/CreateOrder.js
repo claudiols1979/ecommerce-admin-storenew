@@ -56,8 +56,130 @@ function CreateOrder() {
   const currentResellerCategory = user?.role === "Revendedor" ? user.resellerCategory : "cat1";
 
   // Calculate total price of items in cart
-  const calculateTotalPrice = () => {
+  const calculateItemsSubtotal = () => {
     return cartItems.reduce((total, item) => total + item.quantity * item.priceAtSale, 0);
+  };
+
+  const calculateItemsIVA = () => {
+    return cartItems.reduce((total, item) => {
+      const taxRate =
+        (parseFloat(item.product?.iva) !== undefined && item.product?.iva !== ""
+          ? parseFloat(item.product?.iva)
+          : 13) / 100;
+      return total + Math.round(item.quantity * item.priceAtSale * taxRate);
+    }, 0);
+  };
+
+  const calculateTotalWeightGrams = () => {
+    return cartItems.reduce((total, item) => {
+      const weight = item.product?.weight || 100; // Default 100g
+      return total + item.quantity * weight;
+    }, 0);
+  };
+
+  const isGAMUser = () => {
+    const provinceVal = user?.provincia || user?.province;
+    const cantonVal = user?.canton || user?.city;
+
+    const normalize = (str) =>
+      str
+        ? str
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .trim()
+        : "";
+
+    const province = normalize(provinceVal);
+    const canton = normalize(cantonVal);
+
+    const gamCantons = {
+      "san jose": [
+        "central",
+        "escazu",
+        "desamparados",
+        "aserri",
+        "mora",
+        "goicoechea",
+        "santa ana",
+        "alajuelita",
+        "vazquez de coronado",
+        "tibas",
+        "moravia",
+        "montes de oca",
+        "curridabat",
+        "puriscal",
+      ],
+      alajuela: [
+        "central",
+        "atenas",
+        "grecia",
+        "naranjo",
+        "palmares",
+        "poas",
+        "orotina",
+        "sarchi",
+        "zarcero",
+      ],
+      cartago: ["central", "paraiso", "la union", "jimenez", "alvarado", "oreamuno", "el guarco"],
+      heredia: [
+        "central",
+        "barva",
+        "santo domingo",
+        "santa barbara",
+        "san rafael",
+        "san isidro",
+        "belen",
+        "flores",
+        "san pablo",
+      ],
+    };
+
+    if (!province || !canton) return false;
+    return gamCantons[province]?.includes(canton) || false;
+  };
+
+  const calculateShippingCost = () => {
+    if (cartItems.length === 0) return { base: 0, tax: 0, total: 0 };
+
+    const weight = calculateTotalWeightGrams();
+    const isGam = isGAMUser();
+
+    const tariffs = [
+      { max: 250, gam: 1850, resto: 2150 },
+      { max: 500, gam: 1950, resto: 2500 },
+      { max: 1000, gam: 2350, resto: 3450 },
+    ];
+
+    const rate = tariffs.find((t) => weight <= t.max);
+    let base = 0;
+
+    if (rate) {
+      base = isGam ? rate.gam : rate.resto;
+    } else {
+      // Dynamic formula for weight > 1000g
+      const base1kg = isGam ? 2350 : 3450;
+      const extraKiloRate = 1100;
+      const totalKilos = weight / 1000;
+      const extraKilos = Math.ceil(totalKilos - 1);
+      base = base1kg + extraKilos * extraKiloRate;
+    }
+
+    const tax = Math.round(base * 0.13);
+    return { base, tax, total: base + tax };
+  };
+
+  const getFullBreakdown = () => {
+    const subtotal = calculateItemsSubtotal();
+    const iva = calculateItemsIVA();
+    const shipping = calculateShippingCost();
+    return {
+      subtotal,
+      iva,
+      shippingBase: shipping.base,
+      shippingTax: shipping.tax,
+      total: subtotal + iva + shipping.total,
+    };
   };
 
   // Handler for adding a product to the cart
@@ -397,9 +519,11 @@ function CreateOrder() {
                               />
                               <MDTypography variant="button" fontWeight="medium">
                                 {item.name} (Cód: {item.code}) - {item.quantity} x{" "}
-                                {item.priceAtSale.toLocaleString("es-CR", {
+                                {Math.round(item.priceAtSale).toLocaleString("es-CR", {
                                   style: "currency",
                                   currency: "CRC",
+                                  minimumFractionDigits: 0,
+                                  maximumFractionDigits: 0,
                                 })}
                               </MDTypography>
                             </MDBox>
@@ -423,13 +547,86 @@ function CreateOrder() {
                             </MDBox>
                           </MDBox>
                         ))}
-                        <MDBox mt={2} display="flex" justifyContent="flex-end">
-                          <MDTypography variant="h6">
-                            Total:{" "}
-                            {calculateTotalPrice().toLocaleString("es-CR", {
-                              style: "currency",
-                              currency: "CRC",
-                            })}
+                        <MDBox mt={3} p={2} bgColor="grey-100" borderRadius="lg">
+                          <MDTypography variant="h6" mb={1}>
+                            Resumen del Pedido:
+                          </MDTypography>
+                          <MDBox display="flex" justifyContent="space-between" mb={0.5}>
+                            <MDTypography variant="button" color="text">
+                              Subtotal Productos:
+                            </MDTypography>
+                            <MDTypography variant="button" fontWeight="medium">
+                              {Math.round(getFullBreakdown().subtotal).toLocaleString("es-CR", {
+                                style: "currency",
+                                currency: "CRC",
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              })}
+                            </MDTypography>
+                          </MDBox>
+                          <MDBox display="flex" justifyContent="space-between" mb={0.5}>
+                            <MDTypography variant="button" color="text">
+                              IVA Productos:
+                            </MDTypography>
+                            <MDTypography variant="button" fontWeight="medium">
+                              {Math.round(getFullBreakdown().iva).toLocaleString("es-CR", {
+                                style: "currency",
+                                currency: "CRC",
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              })}
+                            </MDTypography>
+                          </MDBox>
+                          <MDBox display="flex" justifyContent="space-between" mb={0.5}>
+                            <MDTypography variant="button" color="text">
+                              Envío (Correos de CR):
+                            </MDTypography>
+                            <MDTypography variant="button" fontWeight="medium">
+                              {Math.round(getFullBreakdown().shippingBase).toLocaleString("es-CR", {
+                                style: "currency",
+                                currency: "CRC",
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              })}
+                            </MDTypography>
+                          </MDBox>
+                          <MDBox display="flex" justifyContent="space-between" mb={0.5}>
+                            <MDTypography variant="button" color="text">
+                              IVA Envío (13%):
+                            </MDTypography>
+                            <MDTypography variant="button" fontWeight="medium">
+                              {Math.round(getFullBreakdown().shippingTax).toLocaleString("es-CR", {
+                                style: "currency",
+                                currency: "CRC",
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              })}
+                            </MDTypography>
+                          </MDBox>
+                          <MDBox
+                            mt={1}
+                            pt={1}
+                            borderTop="1px solid #ccc"
+                            display="flex"
+                            justifyContent="space-between"
+                          >
+                            <MDTypography variant="h5">Total Final:</MDTypography>
+                            <MDTypography variant="h5" color="info">
+                              {Math.round(getFullBreakdown().total).toLocaleString("es-CR", {
+                                style: "currency",
+                                currency: "CRC",
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              })}
+                            </MDTypography>
+                          </MDBox>
+                          <MDTypography
+                            variant="caption"
+                            color="text"
+                            sx={{ mt: 1, display: "block" }}
+                          >
+                            Peso total estimado: {calculateTotalWeightGrams()}g | Región:{" "}
+                            {isGAMUser() ? "GAM" : "Rural/Resto"}
                           </MDTypography>
                         </MDBox>
                       </MDBox>

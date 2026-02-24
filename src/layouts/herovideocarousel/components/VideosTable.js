@@ -48,7 +48,8 @@ function VideosTable({ videos, loading, onEditVideo, onDeleteVideo, onActivateVi
             p={2}
             mb={2}
             sx={{
-              border: "1px solid #e0e0e0",
+              border: "1px solid",
+              borderColor: "divider",
               borderRadius: 1,
               display: "flex",
               alignItems: "center",

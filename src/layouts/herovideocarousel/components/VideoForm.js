@@ -216,7 +216,7 @@ function VideoForm({ video, onClose, onSuccess }) {
       component="form"
       onSubmit={handleSubmit}
       p={3}
-      sx={{ border: "1px solid #e0e0e0", borderRadius: 2 }}
+      sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2 }}
     >
       <MDTypography variant="h5" fontWeight="medium" mb={3}>
         {video ? "Editar Video" : "Subir Nuevo Video"}
@@ -257,7 +257,8 @@ function VideoForm({ video, onClose, onSuccess }) {
           style={{
             marginTop: "8px",
             padding: "8px",
-            border: "1px solid #e0e0e0",
+            border: "1px solid",
+            borderColor: "divider",
             borderRadius: "4px",
             width: "100%",
           }}
@@ -275,7 +276,7 @@ function VideoForm({ video, onClose, onSuccess }) {
               sx={{
                 width: "100%",
                 height: "8px",
-                backgroundColor: "#f0f0f0",
+                backgroundColor: "action.hover",
                 borderRadius: "4px",
                 overflow: "hidden",
                 mt: 0.5,
@@ -301,7 +302,8 @@ function VideoForm({ video, onClose, onSuccess }) {
                 maxWidth: "100%",
                 maxHeight: "300px",
                 borderRadius: "8px",
-                border: "1px solid #e0e0e0",
+                border: "1px solid",
+                borderColor: "divider",
               }}
             >
               <source src={videoPreview} type="video/mp4" />

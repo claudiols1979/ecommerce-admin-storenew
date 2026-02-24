@@ -6,6 +6,7 @@ import PropTypes from "prop-types";
 
 // @mui material components
 import Icon from "@mui/material/Icon";
+import Switch from "@mui/material/Switch";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -57,14 +58,50 @@ ResellerCodeCell.propTypes = {
 };
 
 // Component for Reseller Category
-const ResellerCategoryCell = ({ category }) => (
-  <MDTypography variant="caption" fontWeight="medium" color="info">
-    {category.toUpperCase()}
-  </MDTypography>
-);
+const ResellerCategoryCell = ({ category }) => {
+  const categories = {
+    cat1: "Nivel 1",
+    cat2: "Nivel 2",
+    cat3: "Nivel 3",
+    cat4: "Nivel 4",
+    cat5: "Nivel 5",
+  };
+
+  return (
+    <MDTypography variant="caption" fontWeight="medium" color="info">
+      {categories[category] || category.toUpperCase()}
+    </MDTypography>
+  );
+};
 
 ResellerCategoryCell.propTypes = {
   category: PropTypes.string.isRequired,
+};
+
+ResellerCategoryCell.propTypes = {
+  category: PropTypes.string.isRequired,
+};
+
+// Component for Status Toggle (Block/Unblock)
+const StatusToggleCell = ({ isBlocked, onToggleBlock, resellerId, canManageResellers }) => (
+  <MDBox display="flex" alignItems="center">
+    <Switch
+      checked={!isBlocked}
+      onChange={() => onToggleBlock(resellerId)}
+      color="success"
+      disabled={!canManageResellers}
+    />
+    <MDTypography variant="caption" fontWeight="medium" color={isBlocked ? "error" : "success"}>
+      {isBlocked ? "Bloqueado" : "Activo"}
+    </MDTypography>
+  </MDBox>
+);
+
+StatusToggleCell.propTypes = {
+  isBlocked: PropTypes.bool.isRequired,
+  onToggleBlock: PropTypes.func.isRequired,
+  resellerId: PropTypes.string.isRequired,
+  canManageResellers: PropTypes.bool.isRequired,
 };
 
 // Component for Action Buttons (Edit, Delete - Reset Code is removed)
@@ -174,6 +211,12 @@ export const resellersTableColumns = [
     ),
   },
   {
+    Header: "Estado",
+    accessor: "isBlocked",
+    width: "10%",
+    // Cell rendered in rows
+  },
+  {
     Header: "Acciones",
     accessor: "actions",
     width: "15%",
@@ -186,6 +229,8 @@ export const resellersTableColumns = [
 export const resellersTableRows = (
   filteredResellers,
   handleDeleteReseller,
+  handleResetCode, // Kept for compatibility if used elsewhere, though ActionButtons logic below might need it
+  onToggleBlock,
   canManageResellers,
   canDeleteResellers
 ) => {
@@ -195,6 +240,14 @@ export const resellersTableRows = (
     resellerCategory: reseller.resellerCategory,
     phoneNumber: reseller.phoneNumber,
     address: reseller.address,
+    isBlocked: (
+      <StatusToggleCell
+        isBlocked={reseller.isBlocked || false}
+        onToggleBlock={onToggleBlock}
+        resellerId={reseller._id}
+        canManageResellers={canManageResellers}
+      />
+    ),
     // Render the ActionButtons component here
     actions: (
       <ActionButtons

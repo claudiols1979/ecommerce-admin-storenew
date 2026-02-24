@@ -98,7 +98,7 @@ function SlideForm({ slide, onClose, onSuccess }) {
       component="form"
       onSubmit={handleSubmit}
       p={3}
-      sx={{ border: "1px solid #e0e0e0", borderRadius: 2 }}
+      sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2 }}
     >
       <MDTypography variant="h5" fontWeight="medium" mb={3}>
         {slide ? "Editar Slide" : "Crear Nuevo Slide"}
@@ -108,7 +108,7 @@ function SlideForm({ slide, onClose, onSuccess }) {
         <MDBox
           mb={2}
           p={1}
-          sx={{ border: "1px solid #f44336", borderRadius: 1, bgcolor: "#ffebee" }}
+          sx={{ border: "1px solid", borderColor: "error.main", borderRadius: 1 }}
         >
           <MDTypography color="error" variant="body2">
             Error: {typeof error === "object" ? error.message : error}

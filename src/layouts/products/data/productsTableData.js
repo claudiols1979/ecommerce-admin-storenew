@@ -17,6 +17,7 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
+import Tooltip from "@mui/material/Tooltip"; // For hover text
 import MDButton from "components/MDButton"; // For dialog buttons
 
 // @mui icons
@@ -31,26 +32,32 @@ import { useAuth } from "contexts/AuthContext"; // To get user role for permissi
 import defaultProductImage from "assets/images/default-product.png";
 
 // Helper component for product info (Name, Brand, and now a Link to details)
-const ProductCell = ({ image, name, brand, productId }) => (
-  <MDBox display="flex" alignItems="center" lineHeight={1}>
-    <MDAvatar src={image || defaultProductImage} name={name} size="xs" />
-    <MDBox ml={2} lineHeight={1}>
-      {/* Make the product name a Link to the details page */}
-      <MDTypography
-        component={Link}
-        to={`/products/details/${productId}`}
-        display="block"
-        variant="button"
-        fontWeight="medium"
-        color="info"
-        sx={{ "&:hover": { textDecoration: "underline" } }}
-      >
-        {name}
-      </MDTypography>
-      <MDTypography variant="caption">{brand}</MDTypography>
+const ProductCell = ({ image, name, brand, productId }) => {
+  const truncatedName = name && name.length > 30 ? `${name.substring(0, 30)}...` : name;
+
+  return (
+    <MDBox display="flex" alignItems="center" lineHeight={1}>
+      <MDAvatar src={image || defaultProductImage} name={name} size="xs" />
+      <MDBox ml={2} lineHeight={1}>
+        {/* Make the product name a Link to the details page */}
+        <Tooltip title={name} placement="top" arrow>
+          <MDTypography
+            component={Link}
+            to={`/products/details/${productId}`}
+            display="block"
+            variant="button"
+            fontWeight="medium"
+            color="info"
+            sx={{ "&:hover": { textDecoration: "underline" } }}
+          >
+            {truncatedName}
+          </MDTypography>
+        </Tooltip>
+        <MDTypography variant="caption">{brand}</MDTypography>
+      </MDBox>
     </MDBox>
-  </MDBox>
-);
+  );
+};
 
 // Helper for Status Badge - Now incorporates stock logic
 const StatusBadge = ({ active, countInStock }) => {

@@ -28,6 +28,9 @@ import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
 
+// Material Dashboard 2 React context
+import { useMaterialUIController } from "context";
+
 // Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
@@ -46,19 +49,104 @@ const statusTranslations = {
   processing: "Procesando",
   shipped: "Enviado",
   delivered: "Entregado",
-  expired: "Expirado",
 };
 
 const canModifyOrderItemsStatuses = ["pending", "placed", "processing"];
-const canChangeOrderStatusDropdown = ["pending", "placed", "processing", "shipped"];
+const canChangeOrderStatusDropdown = ["placed", "processing", "shipped"];
 
 function EditOrder() {
+  const GAM_CANTONS = {
+    "san jose": [
+      "central",
+      "escazu",
+      "desamparados",
+      "aserri",
+      "mora",
+      "goicoechea",
+      "santa ana",
+      "alajuelita",
+      "vazquez de coronado",
+      "tibas",
+      "moravia",
+      "montes de oca",
+      "curridabat",
+      "puriscal",
+    ],
+    alajuela: [
+      "central",
+      "atenas",
+      "grecia",
+      "naranjo",
+      "palmares",
+      "poas",
+      "orotina",
+      "sarchi",
+      "zarcero",
+    ],
+    cartago: ["central", "paraiso", "la union", "jimenez", "alvarado", "oreamuno", "el guarco"],
+    heredia: [
+      "central",
+      "barva",
+      "santo domingo",
+      "santa barbara",
+      "san rafael",
+      "san isidro",
+      "belen",
+      "flores",
+      "san pablo",
+    ],
+  };
+
+  const normalize = (str) =>
+    str
+      ? str
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .trim()
+      : "";
+
+  const isGAM = (prov, cant) => {
+    if (!prov || !cant) return false;
+    const nProv = normalize(prov);
+    const nCant = normalize(cant);
+    const gamProv = GAM_CANTONS[nProv];
+    return gamProv ? gamProv.includes(nCant) : false;
+  };
+
+  const calculateShippingFee = (prov, cant, items) => {
+    if (!prov || !cant) return 0;
+    const totalWeight = items.reduce(
+      (sum, item) => sum + item.quantity * (item.product?.weight || 100),
+      0
+    );
+    const inGAM = isGAM(prov, cant);
+    const tariffs = [
+      { maxW: 250, gam: 1850, resto: 2150 },
+      { maxW: 500, gam: 1950, resto: 2500 },
+      { maxW: 1000, gam: 2350, resto: 3450 },
+    ];
+    const rate = tariffs.find((t) => totalWeight <= t.maxW);
+
+    if (rate) {
+      return inGAM ? rate.gam : rate.resto;
+    } else {
+      // Dynamic formula for weight > 1000g
+      const base1kg = inGAM ? 2350 : 3450;
+      const extraKiloRate = 1100;
+      const totalKilos = totalWeight / 1000;
+      const extraKilos = Math.ceil(totalKilos - 1);
+      return base1kg + extraKilos * extraKiloRate;
+    }
+  };
   const { id } = useParams();
   const navigate = useNavigate();
   const { getOrderById, updateOrder, loading: orderLoading } = useOrders();
   const { user } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const [controller] = useMaterialUIController();
+  const { darkMode } = controller;
 
   const [order, setOrder] = useState(null);
   const [currentStatus, setCurrentStatus] = useState("");
@@ -67,14 +155,24 @@ function EditOrder() {
   const [initialCartItems, setInitialCartItems] = useState([]);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [fetchError, setFetchError] = useState(null);
+  const [customerDetails, setCustomerDetails] = useState({
+    name: "",
+    phoneNumber: "",
+    address: "",
+    provincia: "",
+    province: "",
+    canton: "",
+    city: "",
+    distrito: "",
+  });
 
   const [productSearchTerm, setProductSearchTerm] = useState("");
   const [searchedProducts, setSearchedProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(false);
 
   const currentResellerCategory = user?.role === "Revendedor" ? user.resellerCategory : "cat1";
-  const areOrderItemsEditable = canModifyOrderItemsStatuses.includes(currentStatus);
-  const isStatusDropdownEditable = canChangeOrderStatusDropdown.includes(currentStatus);
+  const areOrderItemsEditable = canModifyOrderItemsStatuses.includes(initialStatus);
+  const isStatusDropdownEditable = canChangeOrderStatusDropdown.includes(initialStatus);
 
   useEffect(() => {
     if (productSearchTerm.trim() === "") {
@@ -118,23 +216,49 @@ function EditOrder() {
           const mappedItems = fetchedOrder.items.map((item) => {
             const productInfo =
               item.product && typeof item.product === "object" ? item.product : {};
+
+            // If product is not populated but exists in order as ID,
+            // the backend SHOULD have populated it.
             const totalStock = (productInfo.countInStock || 0) + item.quantity;
+
             return {
               product: {
                 _id: productInfo._id ? productInfo._id.toString() : item.product,
-                name: item.name,
-                code: item.code,
+                name: productInfo.name || item.name, // Use productInfo name if available
+                code: productInfo.code || item.code,
                 imageUrls: productInfo.imageUrls || [],
-                totalStock: totalStock, // Guardamos el stock total disponible
+                totalStock: totalStock,
+                iva:
+                  productInfo.iva !== undefined && productInfo.iva !== ""
+                    ? productInfo.iva
+                    : item.iva || 13,
+                weight: productInfo.weight !== undefined ? productInfo.weight : item.weight || 100,
               },
               quantity: item.quantity,
               priceAtSale: item.priceAtSale,
-              name: item.name,
-              code: item.code,
+              name: productInfo.name || item.name,
+              code: productInfo.code || item.code,
             };
           });
           setCartItems(mappedItems);
           setInitialCartItems(mappedItems);
+          setCustomerDetails({
+            name: fetchedOrder.customerDetails?.name || "",
+            phoneNumber: fetchedOrder.customerDetails?.phoneNumber || "",
+            address: fetchedOrder.customerDetails?.address || "",
+            provincia:
+              fetchedOrder.customerDetails?.province ||
+              fetchedOrder.customerDetails?.provincia ||
+              "",
+            province:
+              fetchedOrder.customerDetails?.province ||
+              fetchedOrder.customerDetails?.provincia ||
+              "",
+            canton:
+              fetchedOrder.customerDetails?.city || fetchedOrder.customerDetails?.canton || "",
+            city: fetchedOrder.customerDetails?.city || fetchedOrder.customerDetails?.canton || "",
+            distrito: fetchedOrder.customerDetails?.distrito || "",
+          });
         } else {
           throw new Error("Detalles del pedido no encontrados.");
         }
@@ -179,6 +303,8 @@ function EditOrder() {
             code: productToAdd.code,
             imageUrls: productToAdd.imageUrls,
             totalStock: productToAdd.countInStock, // Aseguramos que el nuevo producto también tenga el stock
+            iva: productToAdd.iva !== undefined && productToAdd.iva !== "" ? productToAdd.iva : 13, // CRITICAL: Map IVA
+            weight: productToAdd.weight || 100, // CRITICAL: Map weight
           },
           quantity: quantity,
           priceAtSale,
@@ -191,8 +317,37 @@ function EditOrder() {
     setSearchedProducts([]);
   };
 
-  const calculateTotalPrice = useCallback(() => {
-    return cartItems.reduce((total, item) => total + item.quantity * item.priceAtSale, 0);
+  const getFullBreakdown = useCallback(() => {
+    const subtotal = cartItems.reduce((total, item) => total + item.quantity * item.priceAtSale, 0);
+
+    const iva = cartItems.reduce((total, item) => {
+      const taxRate =
+        (parseFloat(item.product?.iva) !== undefined && item.product?.iva !== ""
+          ? parseFloat(item.product?.iva)
+          : 13) / 100;
+      return total + Math.round(item.quantity * item.priceAtSale * taxRate);
+    }, 0);
+
+    const prov = customerDetails.province || customerDetails.provincia;
+    const cant = customerDetails.city || customerDetails.canton;
+
+    const shippingBase = calculateShippingFee(prov, cant, cartItems);
+    const shippingTax = Math.round(shippingBase * 0.13);
+
+    return {
+      subtotal,
+      iva,
+      shippingBase,
+      shippingTax,
+      total: subtotal + iva + shippingBase + shippingTax,
+    };
+  }, [cartItems, customerDetails]);
+
+  const calculateTotalWeightGrams = useCallback(() => {
+    return cartItems.reduce((total, item) => {
+      const weight = item.product?.weight || 100;
+      return total + item.quantity * weight;
+    }, 0);
   }, [cartItems]);
 
   const handleRemoveFromCart = (productId) => {
@@ -252,8 +407,18 @@ function EditOrder() {
           .map((i) => ({ p: i.product._id, q: i.quantity }))
           .sort((a, b) => a.p.localeCompare(b.p))
       );
-    const hasItemsChanged = normalizeItems(cartItems) !== normalizeItems(initialCartItems);
-    if (!hasStatusChanged && !hasItemsChanged) return toast.info("No hay cambios para guardar.");
+    const hasAddressChanged =
+      customerDetails.name !== (order.customerDetails?.name || "") ||
+      customerDetails.phoneNumber !== (order.customerDetails?.phoneNumber || "") ||
+      customerDetails.address !== (order.customerDetails?.address || "") ||
+      customerDetails.provincia !==
+        (order.customerDetails?.provincia || order.customerDetails?.province || "") ||
+      customerDetails.canton !==
+        (order.customerDetails?.canton || order.customerDetails?.city || "") ||
+      customerDetails.distrito !== (order.customerDetails?.distrito || "");
+
+    if (!hasStatusChanged && !hasItemsChanged && !hasAddressChanged)
+      return toast.info("No hay cambios para guardar.");
     if (hasItemsChanged && !canModifyOrderItemsStatuses.includes(initialStatus))
       return toast.error("No se pueden modificar los artículos en este estado.");
     const updatedData = {
@@ -265,6 +430,10 @@ function EditOrder() {
         name: item.name,
         code: item.code,
       })),
+      customerDetails: {
+        ...order.customerDetails,
+        ...customerDetails,
+      },
     };
     try {
       await updateOrder(id, updatedData);
@@ -324,6 +493,15 @@ function EditOrder() {
       items.map((i) => ({ p: i.product._id, q: i.quantity })).sort((a, b) => a.p.localeCompare(b.p))
     );
   const hasItemsChanged = normalizeItems(cartItems) !== normalizeItems(initialCartItems);
+  const hasAddressChanged =
+    customerDetails.name !== (order.customerDetails?.name || "") ||
+    customerDetails.phoneNumber !== (order.customerDetails?.phoneNumber || "") ||
+    customerDetails.address !== (order.customerDetails?.address || "") ||
+    customerDetails.provincia !==
+      (order.customerDetails?.provincia || order.customerDetails?.province || "") ||
+    customerDetails.canton !==
+      (order.customerDetails?.canton || order.customerDetails?.city || "") ||
+    customerDetails.distrito !== (order.customerDetails?.distrito || "");
 
   return (
     <DashboardLayout>
@@ -364,7 +542,7 @@ function EditOrder() {
                     </MDTypography>
                   </Grid>
 
-                  {/* <Grid item xs={12} md={6}>
+                  <Grid item xs={12} md={6}>
                     <FormControl fullWidth variant="outlined">
                       <InputLabel id="status-label">Estado</InputLabel>
                       <Select
@@ -373,16 +551,124 @@ function EditOrder() {
                         onChange={(e) => setCurrentStatus(e.target.value)}
                         label="Estado"
                         disabled={!isStatusDropdownEditable}
+                        sx={{
+                          color: darkMode ? "#fff !important" : "inherit",
+                          "& .MuiSelect-select": {
+                            color: darkMode ? "#fff !important" : "inherit",
+                          },
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderColor: darkMode
+                              ? "rgba(255, 255, 255, 0.3) !important"
+                              : "inherit",
+                          },
+                          "& .MuiSvgIcon-root": {
+                            color: darkMode ? "#fff !important" : "inherit",
+                          },
+                        }}
                       >
                         {Object.keys(statusTranslations).map((statusKey) => (
-                          <MenuItem key={statusKey} value={statusKey}>
+                          <MenuItem
+                            key={statusKey}
+                            value={statusKey}
+                            sx={{
+                              color: darkMode ? "#fff !important" : "inherit",
+                            }}
+                          >
                             {statusTranslations[statusKey]}
                           </MenuItem>
                         ))}
                       </Select>
                     </FormControl>
-                  </Grid> */}
-                  {/* <Grid item xs={12}>
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <MDTypography variant="h6" mt={2} mb={1}>
+                      Información del Cliente:
+                    </MDTypography>
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Nombre del Cliente"
+                      value={customerDetails.name}
+                      onChange={(e) =>
+                        setCustomerDetails({ ...customerDetails, name: e.target.value })
+                      }
+                      variant="outlined"
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Teléfono"
+                      value={customerDetails.phoneNumber}
+                      onChange={(e) =>
+                        setCustomerDetails({ ...customerDetails, phoneNumber: e.target.value })
+                      }
+                      variant="outlined"
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Provincia"
+                      value={customerDetails.provincia || customerDetails.province}
+                      onChange={(e) =>
+                        setCustomerDetails({
+                          ...customerDetails,
+                          provincia: e.target.value,
+                          province: e.target.value,
+                        })
+                      }
+                      variant="outlined"
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Cantón"
+                      value={customerDetails.canton || customerDetails.city}
+                      onChange={(e) =>
+                        setCustomerDetails({
+                          ...customerDetails,
+                          canton: e.target.value,
+                          city: e.target.value,
+                        })
+                      }
+                      variant="outlined"
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Distrito"
+                      value={customerDetails.distrito}
+                      onChange={(e) =>
+                        setCustomerDetails({ ...customerDetails, distrito: e.target.value })
+                      }
+                      variant="outlined"
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      multiline
+                      rows={2}
+                      label="Dirección Exacta"
+                      value={customerDetails.address}
+                      onChange={(e) =>
+                        setCustomerDetails({ ...customerDetails, address: e.target.value })
+                      }
+                      variant="outlined"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
                     <MDTypography variant="h6" mt={3} mb={1}>
                       Modificar Artículos:
                     </MDTypography>
@@ -437,7 +723,7 @@ function EditOrder() {
                         No se pueden modificar los artículos en el estado actual del pedido.
                       </MDTypography>
                     </Grid>
-                  )} */}
+                  )}
 
                   <Grid item xs={12}>
                     <MDTypography variant="h6" mt={3} mb={2}>
@@ -479,10 +765,12 @@ function EditOrder() {
                                 {item.priceAtSale.toLocaleString("es-CR", {
                                   style: "currency",
                                   currency: "CRC",
+                                  minimumFractionDigits: 0,
+                                  maximumFractionDigits: 0,
                                 })}
                               </MDTypography>
                             </MDBox>
-                            {/* <MDBox display="flex" alignItems="center" gap={{ xs: 0.5, sm: 1 }}>
+                            <MDBox display="flex" alignItems="center" gap={{ xs: 0.5, sm: 1 }}>
                               {isMobile ? (
                                 <>
                                   <IconButton
@@ -548,7 +836,7 @@ function EditOrder() {
                               >
                                 <DeleteIcon />
                               </IconButton>
-                            </MDBox> */}
+                            </MDBox>
                           </MDBox>
                         );
                       })
@@ -557,30 +845,112 @@ function EditOrder() {
                         No hay productos en este pedido.
                       </MDTypography>
                     )}
-                    <MDBox mt={2} display="flex" justifyContent="flex-end">
-                      <MDTypography variant="h6" color="text">
-                        Nuevo Total Estimado sin iva:{" "}
-                        {calculateTotalPrice().toLocaleString("es-CR", {
-                          style: "currency",
-                          currency: "CRC",
-                        })}
+                    <MDBox
+                      mt={3}
+                      p={2}
+                      bgColor={darkMode ? "grey-900" : "grey-100"}
+                      borderRadius="lg"
+                    >
+                      <MDTypography variant="h6" mb={1}>
+                        Desglose Actualizado del Pedido:
+                      </MDTypography>
+                      <MDBox display="flex" justifyContent="space-between" mb={0.5}>
+                        <MDTypography variant="button" color="text">
+                          Subtotal Productos:
+                        </MDTypography>
+                        <MDTypography variant="button" fontWeight="medium">
+                          {getFullBreakdown().subtotal.toLocaleString("es-CR", {
+                            style: "currency",
+                            currency: "CRC",
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })}
+                        </MDTypography>
+                      </MDBox>
+                      <MDBox display="flex" justifyContent="space-between" mb={0.5}>
+                        <MDTypography variant="button" color="text">
+                          IVA Productos:
+                        </MDTypography>
+                        <MDTypography variant="button" fontWeight="medium">
+                          {getFullBreakdown().iva.toLocaleString("es-CR", {
+                            style: "currency",
+                            currency: "CRC",
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })}
+                        </MDTypography>
+                      </MDBox>
+                      <MDBox display="flex" justifyContent="space-between" mb={0.5}>
+                        <MDTypography variant="button" color="text">
+                          Envío Estimado:
+                        </MDTypography>
+                        <MDTypography variant="button" fontWeight="medium">
+                          {getFullBreakdown().shippingBase.toLocaleString("es-CR", {
+                            style: "currency",
+                            currency: "CRC",
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })}
+                        </MDTypography>
+                      </MDBox>
+                      <MDBox display="flex" justifyContent="space-between" mb={0.5}>
+                        <MDTypography variant="button" color="text">
+                          IVA Envío (13%):
+                        </MDTypography>
+                        <MDTypography variant="button" fontWeight="medium">
+                          {getFullBreakdown().shippingTax.toLocaleString("es-CR", {
+                            style: "currency",
+                            currency: "CRC",
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })}
+                        </MDTypography>
+                      </MDBox>
+                      <MDBox
+                        mt={1}
+                        pt={1}
+                        borderTop="1px solid #ccc"
+                        display="flex"
+                        justifyContent="space-between"
+                      >
+                        <MDTypography variant="h5">Total Final:</MDTypography>
+                        <MDTypography variant="h5" color="info">
+                          {Math.round(getFullBreakdown().total).toLocaleString("es-CR", {
+                            style: "currency",
+                            currency: "CRC",
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })}
+                        </MDTypography>
+                      </MDBox>
+                      <MDTypography variant="caption" color="text" sx={{ mt: 1, display: "block" }}>
+                        Peso: {calculateTotalWeightGrams()}g | Región:{" "}
+                        {isGAM(
+                          customerDetails.province || customerDetails.provincia,
+                          customerDetails.city || customerDetails.canton
+                        )
+                          ? "GAM"
+                          : "Rural/Resto"}
                       </MDTypography>
                     </MDBox>
                   </Grid>
 
                   <Grid item xs={12} display="flex" justifyContent="flex-end" mt={3}>
-                    {/* <MDButton
+                    <MDButton
                       variant="gradient"
                       color="success"
                       onClick={handleSaveOrder}
-                      disabled={orderLoading || (!hasStatusChanged && !hasItemsChanged)}
+                      disabled={
+                        orderLoading ||
+                        (!hasStatusChanged && !hasItemsChanged && !hasAddressChanged)
+                      }
                     >
                       {orderLoading ? (
                         <CircularProgress size={24} color="inherit" />
                       ) : (
                         "Guardar Cambios"
                       )}
-                    </MDButton> */}
+                    </MDButton>
                   </Grid>
                 </Grid>
               </MDBox>

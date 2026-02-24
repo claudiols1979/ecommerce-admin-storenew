@@ -51,8 +51,9 @@ export const ProductProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       try {
+        const timestamp = new Date().getTime();
         const response = await axios.get(
-          `${API_URL}/api/products?page=${page}&limit=${limit}&keyword=${currentSearchTerm}`, // Use the passed search term
+          `${API_URL}/api/products?page=${page}&limit=${limit}&keyword=${currentSearchTerm}&_t=${timestamp}`, // Use the passed search term and prevent caching
           config
         );
 
@@ -228,6 +229,52 @@ export const ProductProvider = ({ children }) => {
     [authToken, user?.role, getAuthHeaders, fetchProducts, API_URL]
   );
 
+  const createProductBatch = useCallback(
+    async (batchData) => {
+      if (!authToken || !["Administrador", "Editor"].includes(user?.role)) {
+        throw new Error("No autorizado para crear productos.");
+      }
+
+      setLoading(true);
+      setError(null);
+      try {
+        const config = getAuthHeaders();
+        if (!config) throw new Error("Authentication headers not available.");
+        config.headers["Content-Type"] = "application/json";
+        const response = await axios.post(
+          `${API_URL}/api/products/create-batch`,
+          batchData,
+          config
+        );
+        await fetchProducts(searchTerm);
+        return response.data;
+      } catch (err) {
+        console.error("ProductContext (createProductBatch): Error:", err);
+        const errorMessage =
+          err.response?.data?.message || err.message || "Error al crear productos en lote.";
+        setError({ message: errorMessage });
+        throw new Error(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [authToken, user?.role, getAuthHeaders, fetchProducts, API_URL]
+  );
+
+  const getNextBaseCode = useCallback(async () => {
+    if (!authToken || !["Administrador", "Editor"].includes(user?.role)) {
+      throw new Error("No autorizado para generar códigos.");
+    }
+    try {
+      const config = getAuthHeaders();
+      const response = await axios.get(`${API_URL}/api/products/utils/next-base-code`, config);
+      return response.data.nextCode;
+    } catch (err) {
+      console.error("Error obteniendo el siguiente código base:", err);
+      throw err;
+    }
+  }, [authToken, user?.role, getAuthHeaders, API_URL]);
+
   const value = {
     products,
     loading,
@@ -245,6 +292,8 @@ export const ProductProvider = ({ children }) => {
     createProduct,
     updateProduct,
     deleteProduct,
+    createProductBatch,
+    getNextBaseCode,
   };
 
   return <ProductContext.Provider value={value}>{children}</ProductContext.Provider>;

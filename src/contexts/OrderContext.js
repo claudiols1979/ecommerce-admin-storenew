@@ -32,7 +32,7 @@ export const OrderProvider = ({ children }) => {
 
   // This function remains as is, it's used by the component for pagination.
   const fetchOrders = useCallback(
-    async (page = 1, limit = 10, sort = "createdAt_desc", search = "") => {
+    async (page = 1, limit = 10, sort = "createdAt_desc", search = "", excludePending = false) => {
       if (!authToken) {
         setOrders([]);
         setLoading(false);
@@ -56,6 +56,9 @@ export const OrderProvider = ({ children }) => {
         params.append("sort", sort);
         if (search) {
           params.append("search", search);
+        }
+        if (excludePending) {
+          params.append("excludePending", "true");
         }
 
         const response = await axios.get(`${API_URL}/api/orders?${params.toString()}`, config);
@@ -123,27 +126,29 @@ export const OrderProvider = ({ children }) => {
   // --- MODIFIED: This function now performs a real API call ---
   const getOrderById = useCallback(
     async (orderId) => {
-      // Simulate loading state, though actual API call isn't happening here
+      if (!authToken) throw new Error("No hay token de autenticación.");
+      const config = getAuthHeaders();
+      if (!config) throw new Error("No se pudieron generar los headers de autenticación.");
+
       setLoading(true);
       setError(null);
       try {
-        const foundOrder = orders.find((order) => order._id === orderId);
-        if (foundOrder) {
-          return foundOrder;
+        const response = await axios.get(`${API_URL}/api/orders/${orderId}`, config);
+        if (response.data) {
+          return response.data;
         } else {
-          // If not found in current orders state, log an error and throw
-          console.error(`Order with ID ${orderId} not found in loaded data.`);
-          setError({ message: `Pedido con ID ${orderId} no encontrado.` });
-          throw new Error(`Order with ID ${orderId} not found.`);
+          throw new Error(`Pedido con ID ${orderId} no encontrado.`);
         }
       } catch (err) {
-        // Re-throw the error so the calling component can catch it
-        throw err;
+        console.error(`Error fetching order ${orderId}:`, err);
+        const msg = err.response?.data?.message || err.message || "Error al obtener el pedido.";
+        setError({ message: msg });
+        throw new Error(msg);
       } finally {
         setLoading(false);
       }
     },
-    [orders] // Depends on the 'orders' state
+    [authToken, getAuthHeaders, API_URL]
   );
 
   // This function remains as is from your original file.
@@ -168,7 +173,7 @@ export const OrderProvider = ({ children }) => {
         const config = getAuthHeaders();
         if (!config) throw new Error("Authentication headers not available.");
         const response = await axios.put(`${API_URL}/api/orders/${orderId}`, orderData, config);
-        await getOrders(); // Refresh all orders after update
+        // await getOrders(); // Removed to prevent filter reset
         return response.data;
       } catch (err) {
         console.error("Error updating order:", err);
@@ -202,7 +207,6 @@ export const OrderProvider = ({ children }) => {
           config
         );
 
-        await getOrders(); // Refresh all orders after update
         return response.data;
       } catch (err) {
         console.error("Error changing order status:", err);
@@ -219,14 +223,25 @@ export const OrderProvider = ({ children }) => {
     [authToken, user?.role, getAuthHeaders, getOrders, API_URL]
   );
 
-  // This useEffect remains as is from your original file.
-  useEffect(() => {
-    if (authToken) {
-      getOrders();
-    } else {
-      setOrders([]);
-    }
-  }, [authToken, getOrders]);
+  const cleanupPendingOrders = useCallback(
+    async (startDate, endDate) => {
+      try {
+        const config = getAuthHeaders();
+        if (!config) throw new Error("Authentication headers not available.");
+        const response = await axios.delete(
+          `${API_URL}/api/orders/bulk-delete-pending?startDate=${startDate}&endDate=${endDate}`,
+          config
+        );
+        return response.data;
+      } catch (err) {
+        console.error("Error cleaning up pending orders:", err);
+        throw err.response?.data || { message: "Error al limpiar carritos pendientes." };
+      }
+    },
+    [getAuthHeaders, API_URL]
+  );
+
+  // Removed redundant useEffect that was overwriting filters with getOrders()
 
   const value = {
     orders,
@@ -245,6 +260,7 @@ export const OrderProvider = ({ children }) => {
     createOrder,
     updateOrder,
     changeOrderStatus,
+    cleanupPendingOrders,
   };
 
   return <OrderContext.Provider value={value}>{children}</OrderContext.Provider>;

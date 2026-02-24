@@ -20,6 +20,9 @@ import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
 
+// Import mapping component
+import CRAddressSelector from "components/CRAddressSelector";
+
 // Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
@@ -43,6 +46,9 @@ function CreateReseller() {
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [address, setAddress] = useState("");
+  const [provincia, setProvincia] = useState("");
+  const [canton, setCanton] = useState("");
+  const [distrito, setDistrito] = useState("");
   const [resellerCategory, setResellerCategory] = useState(""); // Initialize empty for dropdown
 
   // Access control: Only 'Administrador' can create resellers
@@ -75,6 +81,9 @@ function CreateReseller() {
       email,
       phoneNumber,
       address,
+      provincia,
+      canton,
+      distrito,
       resellerCategory,
     };
 
@@ -123,17 +132,19 @@ function CreateReseller() {
           <Grid item xs={12} lg={8}>
             <Card>
               <MDBox
+                variant="gradient"
+                borderRadius="lg"
                 mx={2}
                 mt={-3}
                 py={3}
                 px={2}
-                variant="gradient"
-                bgColor="info"
-                borderRadius="lg"
-                coloredShadow="info"
                 display="flex"
                 justifyContent="space-between"
                 alignItems="center"
+                sx={{
+                  background: "linear-gradient(135deg, #9b2fbe 0%, #c471ed 50%, #e056a0 100%)",
+                  boxShadow: "0 4px 20px rgba(180, 60, 160, 0.5)",
+                }}
               >
                 <MDTypography variant="h6" color="white">
                   Registrar Nuevo Revendedor
@@ -182,8 +193,24 @@ function CreateReseller() {
                     />
                   </Grid>
                   <Grid item xs={12}>
+                    <Box mt={2} mb={2}>
+                      <MDTypography variant="h6" fontWeight="medium">
+                        Dirección de Entrega
+                      </MDTypography>
+                    </Box>
+                    <CRAddressSelector
+                      provincia={provincia}
+                      setProvincia={setProvincia}
+                      canton={canton}
+                      setCanton={setCanton}
+                      distrito={distrito}
+                      setDistrito={setDistrito}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
                     <TextField
-                      label="Dirección"
+                      label="Dirección Exacta (Otras Señas)"
                       variant="outlined"
                       fullWidth
                       value={address}
@@ -203,9 +230,9 @@ function CreateReseller() {
                         <MenuItem value="">
                           <em>-- Selecciona una Categoría --</em>
                         </MenuItem>
-                        {resellerCategories.map((category) => (
+                        {resellerCategories.map((category, index) => (
                           <MenuItem key={category} value={category}>
-                            {category.toUpperCase()}
+                            Nivel {index + 1}
                           </MenuItem>
                         ))}
                       </Select>

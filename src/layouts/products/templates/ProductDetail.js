@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import PropTypes from "prop-types";
+import DOMPurify from "dompurify";
 
 // @mui material components
 import Grid from "@mui/material/Grid";
@@ -10,6 +12,8 @@ import Box from "@mui/material/Box";
 import Icon from "@mui/material/Icon";
 import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
+import Typography from "@mui/material/Typography";
+import MDBadge from "components/MDBadge"; // Custom Badge if available
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -25,6 +29,33 @@ import Footer from "examples/Footer";
 import { useProducts } from "contexts/ProductContext";
 import { useAuth } from "contexts/AuthContext";
 
+// Icons
+import InventoryIcon from "@mui/icons-material/Inventory";
+import CategoryIcon from "@mui/icons-material/Category";
+import SellIcon from "@mui/icons-material/Sell";
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import StraightenIcon from "@mui/icons-material/Straighten";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
+import BrandingWatermarkIcon from "@mui/icons-material/BrandingWatermark";
+import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
+
+const HTMLContent = ({ html, fallback = "No description available.", ...typographyProps }) => {
+  const createMarkup = (htmlContent) => ({ __html: DOMPurify.sanitize(htmlContent || "") });
+
+  if (!html || html.trim() === "") {
+    return <MDTypography {...typographyProps}>{fallback}</MDTypography>;
+  }
+
+  return <MDTypography {...typographyProps} dangerouslySetInnerHTML={createMarkup(html)} />;
+};
+
+HTMLContent.propTypes = {
+  html: PropTypes.string,
+  fallback: PropTypes.string,
+};
+
 function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -35,8 +66,6 @@ function ProductDetail() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
-  console.log("Product: ", product);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -81,7 +110,6 @@ function ProductDetail() {
     }
   };
 
-  // Helper function para mostrar valor o N/A
   const displayValue = (value, isArray = false) => {
     if (isArray) {
       return value && value.length > 0 ? value : "N/A";
@@ -119,19 +147,15 @@ function ProductDetail() {
           pt={6}
           pb={3}
           display="flex"
+          flexDirection="column"
           justifyContent="center"
           alignItems="center"
           minHeight="50vh"
         >
-          <MDTypography variant="h5" color="error">
+          <MDTypography variant="h5" color="error" mb={2}>
             Error: {fetchError || "Producto no encontrado."}
           </MDTypography>
-          <MDButton
-            onClick={() => navigate("/products")}
-            variant="gradient"
-            color="info"
-            sx={{ ml: 2 }}
-          >
+          <MDButton onClick={() => navigate("/products")} variant="gradient" color="info">
             Volver a Productos
           </MDButton>
         </MDBox>
@@ -147,466 +171,636 @@ function ProductDetail() {
   const formattedPrice =
     displayPrice?.toLocaleString("es-CR", { style: "currency", currency: "CRC" }) || "N/A";
 
-  const stripHtmlWithBreaks = (html) => {
-    if (!html) return "";
-    return html
-      .replace(/<br\s*\/?>/gi, "\n")
-      .replace(/<\/p>/gi, "\n\n")
-      .replace(/<[^>]*>/g, "")
-      .trim();
+  // Modern UI Components Helpers
+  const InfoRow = ({ icon: IconComponent, label, value }) => (
+    <MDBox display="flex" alignItems="flex-start" mb={1.5}>
+      <MDBox color="text" mr={1.5} mt={0.2} display="flex" alignItems="center">
+        {IconComponent && <IconComponent fontSize="small" color="inherit" />}
+      </MDBox>
+      <MDBox>
+        <MDTypography variant="caption" color="text" fontWeight="medium" textTransform="uppercase">
+          {label}
+        </MDTypography>
+        <MDTypography variant="body2" color="dark" fontWeight="bold">
+          {value}
+        </MDTypography>
+      </MDBox>
+    </MDBox>
+  );
+
+  InfoRow.propTypes = {
+    icon: PropTypes.elementType,
+    label: PropTypes.string.isRequired,
+    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   };
 
   return (
     <DashboardLayout>
       <DashboardNavbar />
       <MDBox pt={6} pb={3}>
-        <Grid container spacing={3} justifyContent="center">
-          <Grid item xs={12} lg={10}>
-            <Card>
-              <MDBox
-                mx={2}
-                mt={-3}
-                py={3}
-                px={2}
-                variant="gradient"
-                bgColor="info"
-                borderRadius="lg"
-                coloredShadow="info"
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
+        {/* Main Header Card */}
+        <Card sx={{ mb: 3, overflow: "visible" }}>
+          <MDBox
+            mx={2}
+            mt={-3}
+            py={3}
+            px={3}
+            variant="gradient"
+            bgColor="info"
+            borderRadius="lg"
+            coloredShadow="info"
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <MDBox>
+              <MDTypography variant="h5" color="white" fontWeight="bold">
+                {product.name}
+              </MDTypography>
+              <MDTypography variant="button" color="white" opacity={0.8}>
+                {product.code}
+              </MDTypography>
+            </MDBox>
+            <MDBox display="flex" alignItems="center">
+              <MDButton
+                onClick={() => navigate("/products")}
+                variant="outlined"
+                color="white"
+                sx={{ mr: 1 }}
               >
-                <MDTypography variant="h6" color="white">
-                  {product.name}
-                </MDTypography>
-                <MDBox display="flex" alignItems="center">
-                  <MDButton onClick={() => navigate("/products")} variant="gradient" color="dark">
-                    Volver a Productos
-                  </MDButton>
-                </MDBox>
-              </MDBox>
-              <MDBox p={3}>
-                <Grid container spacing={3}>
-                  <Grid item xs={12} md={5}>
+                Volver
+              </MDButton>
+              <MDButton
+                onClick={() => navigate(`/products/edit/${product._id}`)}
+                variant="contained"
+                color="white"
+              >
+                Editar
+              </MDButton>
+            </MDBox>
+          </MDBox>
+        </Card>
+
+        {/* Content Layout */}
+        <Grid container spacing={3}>
+          {/* LEFT COLUMN - Images & Description */}
+          <Grid item xs={12} lg={4}>
+            {/* Image Gallery */}
+            <Card
+              sx={{
+                mb: 3,
+                p: 2,
+                height: "100%",
+                maxHeight: "500px",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <MDBox
+                position="relative"
+                flex={1}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: "lg",
+                  overflow: "hidden",
+                  bgcolor: "grey.100",
+                }}
+              >
+                {product.imageUrls && product.imageUrls.length > 0 ? (
+                  <>
                     <MDBox
-                      position="relative"
+                      component="img"
+                      src={product.imageUrls[currentImageIndex]?.secure_url}
+                      alt={product.name}
                       sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        minHeight: "250px",
-                        justifyContent: "center",
-                        borderRadius: "lg",
-                        overflow: "hidden",
-                        boxShadow: 3,
-                        p: 2,
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "contain",
                       }}
-                    >
-                      {product.imageUrls && product.imageUrls.length > 0 ? (
-                        <>
-                          <MDBox
-                            component="img"
-                            src={product.imageUrls[currentImageIndex]?.secure_url}
-                            alt={`Product ${product.name} image ${currentImageIndex + 1}`}
-                            sx={{
-                              width: "100%",
-                              maxWidth: "400px",
-                              height: "auto",
-                              maxHeight: "350px",
-                              objectFit: "contain",
-                              borderRadius: "md",
-                            }}
-                          />
-                          {product.imageUrls.length > 1 && (
-                            <>
-                              <MDButton
-                                variant="contained"
-                                color="info"
-                                onClick={handlePrevImage}
-                                sx={{
-                                  position: "absolute",
-                                  left: 10,
-                                  top: "50%",
-                                  transform: "translateY(-50%)",
-                                  minWidth: "unset",
-                                  padding: "8px 10px",
-                                  borderRadius: "50%",
-                                  zIndex: 1,
-                                }}
-                              >
-                                <Icon>arrow_back_ios</Icon>
-                              </MDButton>
-                              <MDButton
-                                variant="contained"
-                                color="info"
-                                onClick={handleNextImage}
-                                sx={{
-                                  position: "absolute",
-                                  right: 10,
-                                  top: "50%",
-                                  transform: "translateY(-50%)",
-                                  minWidth: "unset",
-                                  padding: "8px 10px",
-                                  borderRadius: "50%",
-                                  zIndex: 1,
-                                }}
-                              >
-                                <Icon>arrow_forward_ios</Icon>
-                              </MDButton>
-                              <MDBox
-                                display="flex"
-                                justifyContent="center"
-                                mt={2}
-                                sx={{
-                                  position: "absolute",
-                                  bottom: 10,
-                                  left: "50%",
-                                  transform: "translateX(-50%)",
-                                  zIndex: 1,
-                                }}
-                              >
-                                {product.imageUrls.map((_, index) => (
-                                  <MDBox
-                                    key={index}
-                                    sx={{
-                                      width: "8px",
-                                      height: "8px",
-                                      borderRadius: "50%",
-                                      bgColor:
-                                        index === currentImageIndex ? "info.main" : "grey.400",
-                                      mx: 0.5,
-                                      cursor: "pointer",
-                                      transition: "background-color 0.3s ease",
-                                    }}
-                                    onClick={() => setCurrentImageIndex(index)}
-                                  />
-                                ))}
-                              </MDBox>
-                            </>
-                          )}
-                        </>
-                      ) : (
-                        <MDTypography variant="body2" color="text">
-                          No hay imágenes disponibles.
-                        </MDTypography>
-                      )}
-                    </MDBox>
-                  </Grid>
-
-                  <Grid item xs={12} md={7}>
-                    <MDTypography variant="h6" mb={1}>
-                      Información General:
-                    </MDTypography>
-                    <MDTypography variant="body2" color="text" mb={0.5}>
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        Nombre:
-                      </MDTypography>{" "}
-                      {displayValue(product.name)}
-                    </MDTypography>
-                    <MDTypography variant="body2" color="text" mb={0.5}>
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        Código:
-                      </MDTypography>{" "}
-                      {displayValue(product.code)}
-                    </MDTypography>
-                    <MDTypography variant="body2" color="text" mb={0.5}>
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        Departamento:
-                      </MDTypography>{" "}
-                      {displayValue(product.department)}
-                    </MDTypography>
-                    <MDTypography variant="body2" color="text" mb={0.5}>
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        Marca:
-                      </MDTypography>{" "}
-                      {displayValue(product.brand)}
-                    </MDTypography>
-                    <MDTypography variant="body2" color="text" mb={0.5}>
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        Categoría:
-                      </MDTypography>{" "}
-                      {displayValue(product.category)}
-                    </MDTypography>
-                    <MDTypography variant="body2" color="text" mb={0.5}>
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        Subcategoría:
-                      </MDTypography>{" "}
-                      {displayValue(product.subcategory)}
-                    </MDTypography>
-                    {/* <MDTypography variant="body2" color="text" mb={0.5}>
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        Volumen:
-                      </MDTypography>{" "}
-                      {displayValue(product.volume)}
-                    </MDTypography>
-                    <MDTypography variant="body2" color="text" mb={0.5}>
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        Género:
-                      </MDTypography>{" "}
-                      {displayValue(product.gender)}
-                    </MDTypography> */}
-                    <MDTypography variant="body2" color="text" mb={0.5}>
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        En Inventario:
-                      </MDTypography>{" "}
-                      {product.countInStock || 0}
-                    </MDTypography>
-                    <MDTypography variant="body2" color="text" mb={0.5}>
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        Estado:
-                      </MDTypography>{" "}
-                      {product.active ? "Activo" : "Inactivo"}
-                    </MDTypography>
-                    <MDTypography variant="body2" color="text" mb={0.5}>
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        Precio ({userResellerCategory.toUpperCase()}):
-                      </MDTypography>{" "}
-                      {formattedPrice}
-                    </MDTypography>
-                    <MDTypography variant="body2" color="text" mt={1} mb={0.5}>
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        Etiquetas:
-                      </MDTypography>{" "}
-                      {product.tags && product.tags.length > 0 ? product.tags.join(", ") : "N/A"}
-                    </MDTypography>
-
-                    {/* Etiquetas Promocionales */}
-                    {product.promotionalLabels && product.promotionalLabels.length > 0 && (
-                      <MDBox mt={2}>
-                        <MDTypography variant="h6" mb={1}>
-                          Etiquetas Promocionales:
-                        </MDTypography>
-                        <MDBox display="flex" flexWrap="wrap" gap={1}>
-                          {product.promotionalLabels.map((label) => (
-                            <Chip
-                              key={label._id}
-                              label={label.name}
-                              color="info"
-                              variant="filled"
+                    />
+                    {product.imageUrls.length > 1 && (
+                      <>
+                        <MDButton
+                          variant="contained"
+                          color="white"
+                          onClick={handlePrevImage}
+                          sx={{
+                            position: "absolute",
+                            left: 10,
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            minWidth: 40,
+                            width: 40,
+                            height: 40,
+                            borderRadius: "50%",
+                            zIndex: 1,
+                            p: 0,
+                          }}
+                        >
+                          <Icon color="dark">arrow_back_ios_new</Icon>
+                        </MDButton>
+                        <MDButton
+                          variant="contained"
+                          color="white"
+                          onClick={handleNextImage}
+                          sx={{
+                            position: "absolute",
+                            right: 10,
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            minWidth: 40,
+                            width: 40,
+                            height: 40,
+                            borderRadius: "50%",
+                            zIndex: 1,
+                            p: 0,
+                          }}
+                        >
+                          <Icon color="dark">arrow_forward_ios</Icon>
+                        </MDButton>
+                        <MDBox
+                          display="flex"
+                          justifyContent="center"
+                          position="absolute"
+                          bottom={10}
+                          left="50%"
+                          sx={{ transform: "translateX(-50%)", zIndex: 1 }}
+                        >
+                          {product.imageUrls.map((_, index) => (
+                            <MDBox
+                              key={index}
+                              onClick={() => setCurrentImageIndex(index)}
+                              sx={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: "50%",
+                                mx: 0.5,
+                                cursor: "pointer",
+                                bgcolor: index === currentImageIndex ? "info.main" : "white",
+                                boxShadow: 1,
+                                transition: "all 0.3s ease",
+                              }}
                             />
                           ))}
                         </MDBox>
-                      </MDBox>
+                      </>
                     )}
+                  </>
+                ) : (
+                  <MDTypography variant="body2" color="text">
+                    Sin imagen
+                  </MDTypography>
+                )}
+              </MDBox>
+            </Card>
+          </Grid>
 
-                    <MDTypography variant="h6" mt={3} mb={1}>
-                      Descripción:
+          {/* RIGHT COLUMN - Details Matrix */}
+          <Grid item xs={12} lg={8}>
+            <Grid container spacing={3}>
+              {/* General Info Card */}
+              <Grid item xs={12} md={6}>
+                <Card sx={{ height: "100%", p: 3 }}>
+                  <MDBox display="flex" alignItems="center" mb={2}>
+                    <AssignmentIcon color="info" sx={{ mr: 1 }} />
+                    <MDTypography variant="h6" fontWeight="medium">
+                      Información General
                     </MDTypography>
-                    <MDTypography variant="body2" color="text" mb={2}>
-                      {stripHtmlWithBreaks(product.description) || "No description available."}
-                    </MDTypography>
+                  </MDBox>
+                  <Divider sx={{ mt: 0, mb: 2 }} />
 
-                    <Divider sx={{ my: 2 }} />
+                  <InfoRow
+                    icon={BrandingWatermarkIcon}
+                    label="Marca"
+                    value={displayValue(product.brand)}
+                  />
+                  <InfoRow
+                    icon={CategoryIcon}
+                    label="Categoría"
+                    value={displayValue(product.category)}
+                  />
+                  <InfoRow
+                    icon={FormatListBulletedIcon}
+                    label="Subcategoría"
+                    value={displayValue(product.subcategory)}
+                  />
+                  <InfoRow
+                    icon={AssignmentIcon}
+                    label="Departamento"
+                    value={displayValue(product.department)}
+                  />
+                  <InfoRow
+                    icon={AssignmentIcon}
+                    label="Código CABYS"
+                    value={displayValue(product.codigoCabys)}
+                  />
 
-                    {/* NUEVOS ATRIBUTOS FLEXIBLES */}
-                    <MDTypography variant="h6" mb={2} color="primary">
-                      Atributos Flexibles
+                  <MDBox display="flex" alignItems="center" mt={2}>
+                    <MDTypography
+                      variant="caption"
+                      color="text"
+                      fontWeight="medium"
+                      textTransform="uppercase"
+                      mr={1}
+                    >
+                      Estado:
                     </MDTypography>
+                    {product.active ? (
+                      <Chip
+                        icon={<CheckCircleIcon />}
+                        label="Activo"
+                        color="success"
+                        size="small"
+                        variant="outlined"
+                      />
+                    ) : (
+                      <Chip
+                        icon={<CancelIcon />}
+                        label="Inactivo"
+                        color="error"
+                        size="small"
+                        variant="outlined"
+                      />
+                    )}
+                  </MDBox>
+                </Card>
+              </Grid>
 
-                    {/* Colores */}
-                    <MDTypography variant="body2" color="text" mb={0.5}>
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        Volumen:
-                      </MDTypography>{" "}
-                      {displayValue(product.volume)}
+              {/* Status & Inventory & Dimensions Card */}
+              <Grid item xs={12} md={6}>
+                <Card sx={{ height: "100%", p: 3 }}>
+                  <MDBox display="flex" alignItems="center" mb={2}>
+                    <InventoryIcon color="info" sx={{ mr: 1 }} />
+                    <MDTypography variant="h6" fontWeight="medium">
+                      Inventario & Medidas
                     </MDTypography>
-                    <MDTypography variant="body2" color="text" mb={0.5}>
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        Género:
-                      </MDTypography>{" "}
-                      {displayValue(product.gender)}
+                  </MDBox>
+                  <Divider sx={{ mt: 0, mb: 2 }} />
+
+                  <MDBox mb={2}>
+                    <MDTypography
+                      variant="caption"
+                      color="text"
+                      fontWeight="medium"
+                      textTransform="uppercase"
+                    >
+                      Stock Disponible
                     </MDTypography>
-                    <MDBox mb={2}>
-                      <MDTypography variant="button" fontWeight="bold" mb={1}>
-                        Colores:
+                    <MDBox display="flex" alignItems="baseline">
+                      <MDTypography
+                        variant="h4"
+                        color={product.countInStock > 10 ? "success" : "error"}
+                        fontWeight="bold"
+                      >
+                        {product.countInStock || 0}
                       </MDTypography>
-                      {product.colors && product.colors.length > 0 ? (
-                        <MDBox display="flex" flexWrap="wrap" gap={0.5} mt={0.5}>
-                          {product.colors.map((color, index) => (
-                            <Chip
-                              key={index}
-                              label={color}
-                              color="primary"
-                              variant="outlined"
-                              size="small"
-                            />
-                          ))}
-                        </MDBox>
-                      ) : (
-                        <MDTypography variant="body2" color="text">
-                          N/A
-                        </MDTypography>
-                      )}
-                    </MDBox>
-
-                    {/* Tamaños */}
-                    <MDBox mb={2}>
-                      <MDTypography variant="button" fontWeight="bold" mb={1}>
-                        Tamaños:
+                      <MDTypography variant="button" color="text" ml={0.5}>
+                        unidades
                       </MDTypography>
-                      {product.sizes && product.sizes.length > 0 ? (
-                        <MDBox display="flex" flexWrap="wrap" gap={0.5} mt={0.5}>
-                          {product.sizes.map((size, index) => (
-                            <Chip
-                              key={index}
-                              label={size}
-                              color="secondary"
-                              variant="outlined"
-                              size="small"
-                            />
-                          ))}
-                        </MDBox>
-                      ) : (
-                        <MDTypography variant="body2" color="text">
-                          N/A
-                        </MDTypography>
-                      )}
                     </MDBox>
+                  </MDBox>
 
-                    {/* Materiales */}
-                    <MDBox mb={2}>
-                      <MDTypography variant="button" fontWeight="bold" mb={1}>
-                        Materiales:
-                      </MDTypography>
-                      {product.materials && product.materials.length > 0 ? (
-                        <MDBox display="flex" flexWrap="wrap" gap={0.5} mt={0.5}>
-                          {product.materials.map((material, index) => (
-                            <Chip
-                              key={index}
-                              label={material}
-                              color="success"
-                              variant="outlined"
-                              size="small"
-                            />
-                          ))}
-                        </MDBox>
-                      ) : (
-                        <MDTypography variant="body2" color="text">
-                          N/A
-                        </MDTypography>
-                      )}
-                    </MDBox>
-
-                    {/* Características */}
-                    <MDBox mb={2}>
-                      <MDTypography variant="button" fontWeight="bold" mb={1}>
-                        Características Especiales:
-                      </MDTypography>
-                      {product.features && product.features.length > 0 ? (
-                        <MDBox display="flex" flexWrap="wrap" gap={0.5} mt={0.5}>
-                          {product.features.map((feature, index) => (
-                            <Chip
-                              key={index}
-                              label={feature}
-                              color="warning"
-                              variant="outlined"
-                              size="small"
-                            />
-                          ))}
-                        </MDBox>
-                      ) : (
-                        <MDTypography variant="body2" color="text">
-                          N/A
-                        </MDTypography>
-                      )}
-                    </MDBox>
-
-                    {/* Información adicional */}
-                    <MDTypography variant="body2" color="text" mb={0.5}>
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        Rango Etario:
-                      </MDTypography>{" "}
-                      {displayValue(product.ageRange)}
-                    </MDTypography>
-
-                    <MDTypography variant="body2" color="text" mb={0.5}>
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        Voltaje:
-                      </MDTypography>{" "}
-                      {displayValue(product.voltage)}
-                    </MDTypography>
-
-                    <MDTypography variant="body2" color="text" mb={0.5}>
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        Garantía:
-                      </MDTypography>{" "}
-                      {displayValue(product.warranty)}
-                    </MDTypography>
-
-                    <MDTypography variant="body2" color="text" mb={0.5}>
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        Tipo de Batería:
-                      </MDTypography>{" "}
-                      {displayValue(product.batteryType)}
-                    </MDTypography>
-
-                    <MDTypography variant="body2" color="text" mb={0.5}>
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        Incluye Baterías:
-                      </MDTypography>{" "}
-                      {product.includesBatteries ? "Sí" : "No"}
-                    </MDTypography>
-
-                    <MDTypography variant="body2" color="text" mb={0.5}>
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        Ubicación Recomendada:
-                      </MDTypography>{" "}
-                      {displayValue(product.recommendedLocation)}
-                    </MDTypography>
-
-                    <MDTypography variant="body2" color="text" mb={0.5}>
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        Peso:
-                      </MDTypography>{" "}
-                      {product.weight ? `${product.weight} kg` : "N/A"}
-                    </MDTypography>
-
-                    {/* Dimensiones */}
-                    <MDTypography variant="body2" color="text" mb={2}>
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        Dimensiones:
-                      </MDTypography>{" "}
-                      {product.dimensions &&
+                  <InfoRow
+                    icon={StraightenIcon}
+                    label="Peso"
+                    value={product.weight ? `${product.weight} g` : "N/A"}
+                  />
+                  <InfoRow
+                    icon={StraightenIcon}
+                    label="Dimensiones (Ancho x Alto x Prof.)"
+                    value={
+                      product.dimensions &&
                       (product.dimensions.width ||
                         product.dimensions.height ||
                         product.dimensions.depth)
                         ? `${product.dimensions.width || 0} x ${product.dimensions.height || 0} x ${
                             product.dimensions.depth || 0
                           } cm`
-                        : "N/A"}
-                    </MDTypography>
+                        : "N/A"
+                    }
+                  />
+                  <InfoRow
+                    icon={AssignmentIcon}
+                    label="Garantía"
+                    value={displayValue(product.warranty)}
+                  />
+                  <InfoRow
+                    icon={AssignmentIcon}
+                    label="Rango Etario"
+                    value={displayValue(product.ageRange)}
+                  />
+                  <InfoRow
+                    icon={AssignmentIcon}
+                    label="Ubicación"
+                    value={displayValue(product.recommendedLocation)}
+                  />
+                </Card>
+              </Grid>
 
-                    <Divider sx={{ my: 2 }} />
-
-                    <MDTypography variant="h6" mt={2} mb={1}>
-                      Precios de Revendedor:
+              {/* Pricing Card */}
+              <Grid item xs={12}>
+                <Card sx={{ p: 3 }}>
+                  <MDBox display="flex" alignItems="center" mb={2}>
+                    <SellIcon color="success" sx={{ mr: 1 }} />
+                    <MDTypography variant="h6" fontWeight="medium">
+                      Precios por Categorias de Clientes
                     </MDTypography>
-                    {Object.keys(product.resellerPrices).map((cat) => (
-                      <MDTypography variant="body2" color="text" key={cat} mb={0.5}>
-                        <MDTypography component="span" variant="button" fontWeight="bold">
-                          {cat.toUpperCase()}:
-                        </MDTypography>{" "}
-                        {product.resellerPrices[cat]?.toLocaleString("es-CR", {
-                          style: "currency",
-                          currency: "CRC",
-                        }) || "N/A"}
-                      </MDTypography>
+                  </MDBox>
+                  <Divider sx={{ mt: 0, mb: 2 }} />
+
+                  <Grid container spacing={2}>
+                    {["cat1", "cat2", "cat3", "cat4", "cat5"].map((cat) => (
+                      <Grid item xs={6} sm={4} md={2.4} key={cat}>
+                        <MDBox
+                          p={2}
+                          borderRadius="lg"
+                          bgcolor={userResellerCategory === cat ? "info.main" : "grey.100"}
+                          textAlign="center"
+                          sx={{ transition: "all 0.2s" }}
+                        >
+                          <MDTypography
+                            variant="caption"
+                            color={userResellerCategory === cat ? "white" : "text"}
+                            fontWeight="bold"
+                          >
+                            {"Nivel " + cat.replace("cat", "")}{" "}
+                            {userResellerCategory === cat && "(Tu Nivel)"}
+                          </MDTypography>
+                          <MDTypography
+                            variant="h6"
+                            color={userResellerCategory === cat ? "white" : "dark"}
+                            fontWeight="bold"
+                          >
+                            {product.resellerPrices?.[cat]?.toLocaleString("es-CR", {
+                              style: "currency",
+                              currency: "CRC",
+                              maximumFractionDigits: 0,
+                            }) || "N/A"}
+                          </MDTypography>
+                        </MDBox>
+                      </Grid>
                     ))}
-                    <MDTypography variant="body2" color="text" mt={2} mb={0.5}>
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        Creado el:
-                      </MDTypography>{" "}
-                      {new Date(product.createdAt).toLocaleDateString("es-CR")}
-                    </MDTypography>
-                    <MDTypography variant="body2" color="text">
-                      <MDTypography component="span" variant="button" fontWeight="bold">
-                        Última Actualización:
-                      </MDTypography>{" "}
-                      {new Date(product.updatedAt).toLocaleDateString("es-CR")}
-                    </MDTypography>
                   </Grid>
-                </Grid>
-              </MDBox>
+                </Card>
+              </Grid>
+
+              {/* Attributes Card */}
+              <Grid item xs={12}>
+                <Card sx={{ p: 3 }}>
+                  <MDBox display="flex" alignItems="center" mb={2}>
+                    <LocalOfferIcon color="warning" sx={{ mr: 1 }} />
+                    <MDTypography variant="h6" fontWeight="medium">
+                      Atributos Flexibles & Etiquetas
+                    </MDTypography>
+                  </MDBox>
+                  <Divider sx={{ mt: 0, mb: 2 }} />
+
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} sm={6}>
+                      <MDTypography
+                        variant="caption"
+                        color="text"
+                        fontWeight="medium"
+                        textTransform="uppercase"
+                        mb={1}
+                        display="block"
+                      >
+                        Colores Disponibles
+                      </MDTypography>
+                      <MDBox display="flex" flexWrap="wrap" gap={1}>
+                        {product.colors && product.colors.length > 0 ? (
+                          product.colors.map((c, i) => (
+                            <Chip
+                              key={i}
+                              label={c}
+                              size="small"
+                              variant="outlined"
+                              color="primary"
+                            />
+                          ))
+                        ) : (
+                          <MDTypography variant="body2" color="text">
+                            N/A
+                          </MDTypography>
+                        )}
+                      </MDBox>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <MDTypography
+                        variant="caption"
+                        color="text"
+                        fontWeight="medium"
+                        textTransform="uppercase"
+                        mb={1}
+                        display="block"
+                      >
+                        Tallas / Tamaños
+                      </MDTypography>
+                      <MDBox display="flex" flexWrap="wrap" gap={1}>
+                        {product.sizes && product.sizes.length > 0 ? (
+                          product.sizes.map((s, i) => (
+                            <Chip
+                              key={i}
+                              label={s}
+                              size="small"
+                              variant="outlined"
+                              color="secondary"
+                            />
+                          ))
+                        ) : (
+                          <MDTypography variant="body2" color="text">
+                            N/A
+                          </MDTypography>
+                        )}
+                      </MDBox>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <MDTypography
+                        variant="caption"
+                        color="text"
+                        fontWeight="medium"
+                        textTransform="uppercase"
+                        mb={1}
+                        display="block"
+                      >
+                        Materiales
+                      </MDTypography>
+                      <MDBox display="flex" flexWrap="wrap" gap={1}>
+                        {product.materials && product.materials.length > 0 ? (
+                          product.materials.map((m, i) => (
+                            <Chip
+                              key={i}
+                              label={m}
+                              size="small"
+                              variant="filled"
+                              color="success"
+                              sx={{ color: "#fff" }}
+                            />
+                          ))
+                        ) : (
+                          <MDTypography variant="body2" color="text">
+                            N/A
+                          </MDTypography>
+                        )}
+                      </MDBox>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <MDTypography
+                        variant="caption"
+                        color="text"
+                        fontWeight="medium"
+                        textTransform="uppercase"
+                        mb={1}
+                        display="block"
+                      >
+                        Volumen / Género
+                      </MDTypography>
+                      <MDTypography variant="body2" color="dark">
+                        <b>Vol:</b> {displayValue(product.volume)} &nbsp;|&nbsp; <b>Gén:</b>{" "}
+                        {displayValue(product.gender)}
+                      </MDTypography>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <MDTypography
+                        variant="caption"
+                        color="text"
+                        fontWeight="medium"
+                        textTransform="uppercase"
+                        mb={1}
+                        display="block"
+                      >
+                        Electricidad & Baterías
+                      </MDTypography>
+                      <MDTypography variant="body2" color="dark">
+                        <b>Voltaje:</b> {displayValue(product.voltage)} &nbsp;|&nbsp;{" "}
+                        <b>Batería:</b> {displayValue(product.batteryType)}{" "}
+                        {product.includesBatteries ? "(Incluida)" : ""}
+                      </MDTypography>
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <MDTypography
+                        variant="caption"
+                        color="text"
+                        fontWeight="medium"
+                        textTransform="uppercase"
+                        mb={1}
+                        display="block"
+                      >
+                        Características Adicionales
+                      </MDTypography>
+                      <MDBox display="flex" flexWrap="wrap" gap={1}>
+                        {product.features && product.features.length > 0 ? (
+                          product.features.map((f, i) => (
+                            <Chip key={i} label={f} size="small" variant="outlined" color="info" />
+                          ))
+                        ) : (
+                          <MDTypography variant="body2" color="text">
+                            N/A
+                          </MDTypography>
+                        )}
+                      </MDBox>
+                    </Grid>
+                  </Grid>
+
+                  <Divider sx={{ my: 3 }} />
+
+                  {/* Tags & Promotional Labels */}
+                  <MDBox display="flex" flexDirection="column" gap={2}>
+                    <MDBox>
+                      <MDTypography
+                        variant="caption"
+                        color="text"
+                        fontWeight="medium"
+                        textTransform="uppercase"
+                        mb={1}
+                        display="block"
+                      >
+                        Etiquetas Promocionales
+                      </MDTypography>
+                      <MDBox display="flex" flexWrap="wrap" gap={1}>
+                        {product.promotionalLabels && product.promotionalLabels.length > 0 ? (
+                          product.promotionalLabels.map((l, i) => (
+                            <Chip
+                              key={i}
+                              label={l.name || l}
+                              size="small"
+                              sx={{
+                                background: "linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)",
+                                color: "white",
+                                border: "none",
+                                fontWeight: "bold",
+                              }}
+                            />
+                          ))
+                        ) : (
+                          <MDTypography variant="body2" color="text">
+                            N/A
+                          </MDTypography>
+                        )}
+                      </MDBox>
+                    </MDBox>
+
+                    <MDBox>
+                      <MDTypography
+                        variant="caption"
+                        color="text"
+                        fontWeight="medium"
+                        textTransform="uppercase"
+                        mb={1}
+                        display="block"
+                      >
+                        Etiquetas Búsqueda (Tags)
+                      </MDTypography>
+                      <MDBox display="flex" flexWrap="wrap" gap={1}>
+                        {product.tags && product.tags.length > 0 ? (
+                          product.tags.map((t, i) => (
+                            <Chip
+                              key={i}
+                              label={t}
+                              size="small"
+                              variant="outlined"
+                              sx={{ borderColor: "grey.700", color: "grey.800" }}
+                            />
+                          ))
+                        ) : (
+                          <MDTypography variant="body2" color="text">
+                            N/A
+                          </MDTypography>
+                        )}
+                      </MDBox>
+                    </MDBox>
+                  </MDBox>
+                </Card>
+              </Grid>
+            </Grid>
+          </Grid>
+
+          {/* BOTTOM ROW - Descriptions */}
+          <Grid item xs={12}>
+            <Card sx={{ p: 3 }}>
+              <MDTypography variant="h6" fontWeight="medium" mb={2}>
+                Descripción Detallada
+              </MDTypography>
+              <Divider sx={{ mt: 0, mb: 2 }} />
+              <HTMLContent
+                html={product.description}
+                fallback="No hay descripción disponible para este producto."
+                variant="body2"
+                color="text"
+                sx={{
+                  lineHeight: 1.8,
+                  "& p": { mb: 2 },
+                  "& ul, & ol": { ml: 3, mb: 2 },
+                  "& li": { mb: 0.5 },
+                }}
+              />
             </Card>
           </Grid>
         </Grid>

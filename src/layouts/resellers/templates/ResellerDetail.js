@@ -24,6 +24,9 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 
+import DataTable from "examples/Tables/DataTable";
+import API_URL from "config";
+
 // Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
@@ -42,6 +45,9 @@ function ResellerDetail() {
   const [reseller, setReseller] = useState(null);
   const [fetchError, setFetchError] = useState(null);
   const [isActionLoading, setIsActionLoading] = useState(false); // New state for action-specific loading
+
+  const [invoices, setInvoices] = useState([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
 
   // Dialog states for reset code confirmation
   const [openResetDialog, setOpenResetDialog] = useState(false);
@@ -79,6 +85,37 @@ function ResellerDetail() {
       fetchDetails();
     }
   }, [id, getResellerById, canViewDetails]);
+
+  // Fetch electronic invoices
+  useEffect(() => {
+    const fetchInvoices = async () => {
+      setInvoicesLoading(true);
+      try {
+        const token = user?.token;
+        if (!token) return;
+
+        const response = await fetch(`${API_URL}/api/electronic-invoices/user/${id}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setInvoices(data);
+        }
+      } catch (err) {
+        console.error("Error fetching electronic invoices:", err);
+      } finally {
+        setInvoicesLoading(false);
+      }
+    };
+    if (id) {
+      fetchInvoices();
+    }
+  }, [id, user?.token]);
 
   // Handle opening the reset confirmation dialog
   const handleResetCodeRequest = (resellerId) => {
@@ -191,16 +228,9 @@ function ResellerDetail() {
                       component={Link}
                       to={`/resellers/edit/${reseller._id}`}
                       variant="gradient"
-                      bgColor="dark"
-                      sx={{
-                        backgroundColor: "black",
-                        color: "white",
-                        "&:hover": {
-                          backgroundColor: "#333",
-                        },
-                      }}
+                      color="dark"
                     >
-                      <Icon sx={{ fontWeight: "bold", color: "white" }}>edit</Icon>
+                      <Icon sx={{ fontWeight: "bold" }}>edit</Icon>
                       &nbsp;Editar
                     </MDButton>
                   )}
@@ -268,9 +298,16 @@ function ResellerDetail() {
                   </Grid>
                   <Grid item xs={12}>
                     <MDTypography variant="body2" color="text" fontWeight="bold">
-                      Dirección:
+                      Dirección Completa:
                     </MDTypography>
-                    <MDTypography variant="body2">{reseller.address || "N/A"}</MDTypography>
+                    <MDTypography variant="body2">
+                      {reseller.provincia
+                        ? `${reseller.provincia}, ${reseller.canton}, ${reseller.distrito}`
+                        : "Sin provincia/cantón/distrito"}
+                    </MDTypography>
+                    <MDTypography variant="body2">
+                      Otras señas: {reseller.address || "N/A"}
+                    </MDTypography>
                   </Grid>
                   <Grid item xs={12}>
                     <Divider />
@@ -291,6 +328,77 @@ function ResellerDetail() {
                     Volver
                   </MDButton>
                 </MDBox>
+              </MDBox>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} lg={8}>
+            <Card>
+              <MDBox
+                mx={2}
+                mt={1}
+                py={3}
+                px={2}
+                variant="gradient"
+                bgColor="success"
+                borderRadius="lg"
+                coloredShadow="success"
+              >
+                <MDTypography variant="h6" color="white">
+                  Facturas Electrónicas
+                </MDTypography>
+              </MDBox>
+              <MDBox p={3}>
+                {invoicesLoading ? (
+                  <MDBox display="flex" justifyContent="center">
+                    <CircularProgress color="info" />
+                  </MDBox>
+                ) : (
+                  <DataTable
+                    table={{
+                      columns: [
+                        { Header: "Fecha", accessor: "date", align: "left" },
+                        { Header: "Tipo", accessor: "type", align: "left" },
+                        { Header: "Total", accessor: "total", align: "center" },
+                        { Header: "Estado", accessor: "status", align: "center" },
+                        { Header: "Consecutivo", accessor: "consecutivo", align: "center" },
+                        { Header: "Clave", accessor: "clave", align: "center" },
+                      ],
+                      rows: invoices.map((inv) => ({
+                        date: new Date(inv.fechaEmision).toLocaleString("es-CR"),
+                        type:
+                          inv.tipoDocumento === "01"
+                            ? "Factura Electrónica"
+                            : "Tiquete Electrónico",
+                        total: `₡${inv.totalComprobante?.toLocaleString("es-CR")}`,
+                        status: (
+                          <MDTypography
+                            variant="caption"
+                            color={inv.estado === "error" ? "error" : "success"}
+                            fontWeight="medium"
+                          >
+                            {inv.estado.toUpperCase()}
+                          </MDTypography>
+                        ),
+                        consecutivo: inv.consecutivo || "N/A",
+                        clave: inv.clave ? (
+                          <MDTypography
+                            variant="caption"
+                            sx={{ wordBreak: "break-all", display: "block", maxWidth: "150px" }}
+                          >
+                            {inv.clave}
+                          </MDTypography>
+                        ) : (
+                          "N/A"
+                        ),
+                      })),
+                    }}
+                    isSorted={false}
+                    entriesPerPage={true}
+                    showTotalEntries={true}
+                    noEndBorder
+                  />
+                )}
               </MDBox>
             </Card>
           </Grid>

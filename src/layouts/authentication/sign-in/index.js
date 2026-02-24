@@ -13,11 +13,6 @@ import Switch from "@mui/material/Switch";
 import Grid from "@mui/material/Grid";
 import MuiLink from "@mui/material/Link";
 
-// @mui icons
-import FacebookIcon from "@mui/icons-material/Facebook";
-import GitHubIcon from "@mui/icons-material/GitHub";
-import GoogleIcon from "@mui/icons-material/Google";
-
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
@@ -32,6 +27,50 @@ import bgImage from "assets/images/bg-sign-in-basic.jpeg";
 
 // --- Import useAuth hook ---
 import { useAuth } from "contexts/AuthContext";
+
+const glassCardSx = {
+  backgroundColor: "rgba(255, 255, 255, 0.1) !important",
+  backdropFilter: "blur(24px)",
+  WebkitBackdropFilter: "blur(24px)",
+  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important",
+  border: "1px solid rgba(255, 255, 255, 0.2)",
+  color: "#fff",
+};
+
+const glassInputSx = {
+  "& .MuiOutlinedInput-root, & .MuiInput-root, & .MuiFilledInput-root": {
+    borderRadius: "12px",
+    backgroundColor: "rgba(255, 255, 255, 0.12)",
+    color: "#fff",
+    "& fieldset": {
+      borderColor: "rgba(255, 255, 255, 0.3)",
+    },
+    "&:hover fieldset": {
+      borderColor: "rgba(255, 255, 255, 0.6)",
+    },
+    "&.Mui-focused fieldset": {
+      borderColor: "rgba(255, 255, 255, 0.8)",
+    },
+    "&::before": {
+      borderBottomColor: "rgba(255, 255, 255, 0.3) !important",
+    },
+    "&::after": {
+      borderBottomColor: "#ffffff !important",
+    },
+    "&:hover:not(.Mui-disabled)::before": {
+      borderBottomColor: "rgba(255, 255, 255, 0.6) !important",
+    },
+    "& input": {
+      color: "#fff !important",
+    },
+  },
+  "& .MuiInputLabel-root": {
+    color: "rgba(255, 255, 255, 0.7) !important",
+  },
+  "& .MuiInputLabel-root.Mui-focused": {
+    color: "#ffffff !important",
+  },
+};
 
 function Basic() {
   const [rememberMe, setRememberMe] = useState(false);
@@ -64,17 +103,19 @@ function Basic() {
 
   return (
     <BasicLayout image={bgImage}>
-      <Card>
+      <Card sx={glassCardSx}>
         <MDBox
           variant="gradient"
-          bgColor="info"
           borderRadius="lg"
-          coloredShadow="info"
           mx={2}
           mt={-3}
           p={2}
           mb={1}
           textAlign="center"
+          sx={{
+            background: "linear-gradient(135deg, #9b2fbe 0%, #c471ed 50%, #e056a0 100%)",
+            boxShadow: "0 4px 20px rgba(180, 60, 160, 0.5)",
+          }}
         >
           <MDTypography variant="h4" fontWeight="medium" color="white" mt={1}>
             Iniciar Sesión
@@ -93,6 +134,7 @@ function Basic() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                sx={glassInputSx}
               />
             </MDBox>
             <MDBox mb={2}>
@@ -103,20 +145,23 @@ function Basic() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                sx={glassInputSx}
               />
             </MDBox>
             <MDBox display="flex" alignItems="center" justifyContent="space-between">
               <MDBox display="flex" alignItems="center" ml={-1}>
                 {/* Remember me switch can be added here if needed */}
               </MDBox>
-              {/* --- FORGOT PASSWORD LINK ADDED HERE --- */}
+              {/* --- FORGOT PASSWORD LINK --- */}
               <MDTypography
                 component={Link}
                 to="/authentication/reset-password"
                 variant="button"
-                color="info"
                 fontWeight="regular"
-                textGradient
+                sx={{
+                  color: "rgba(255, 255, 255, 0.7) !important",
+                  "&:hover": { color: "#fff !important" },
+                }}
               >
                 ¿Olvidaste tu contraseña?
               </MDTypography>
@@ -124,27 +169,53 @@ function Basic() {
 
             {error && (
               <MDBox mt={2} mb={1} textAlign="center">
-                <MDTypography variant="caption" color="error" fontWeight="medium">
+                <MDTypography
+                  variant="caption"
+                  fontWeight="medium"
+                  sx={{ color: "#ff8a80 !important" }}
+                >
                   {error}
                 </MDTypography>
               </MDBox>
             )}
 
             <MDBox mt={4} mb={1}>
-              <MDButton variant="gradient" color="info" fullWidth type="submit" disabled={loading}>
+              <MDButton
+                fullWidth
+                type="submit"
+                disabled={loading}
+                sx={{
+                  background:
+                    "linear-gradient(135deg, #9b2fbe 0%, #c471ed 50%, #e056a0 100%) !important",
+                  color: "#fff !important",
+                  borderRadius: "12px",
+                  fontWeight: "bold",
+                  fontSize: "0.9rem",
+                  padding: "12px",
+                  boxShadow: "0 4px 20px rgba(180, 60, 160, 0.5)",
+                  "&:hover": {
+                    background:
+                      "linear-gradient(135deg, #c471ed 0%, #e056a0 50%, #f64f59 100%) !important",
+                    boxShadow: "0 6px 30px rgba(180, 60, 160, 0.7)",
+                    transform: "translateY(-2px)",
+                  },
+                }}
+              >
                 {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
               </MDButton>
             </MDBox>
             <MDBox mt={3} mb={1} textAlign="center">
-              <MDTypography variant="button" color="text">
+              <MDTypography variant="button" sx={{ color: "rgba(255, 255, 255, 0.7) !important" }}>
                 ¿No tienes una cuenta?{" "}
                 <MDTypography
                   component={Link}
                   to="/authentication/sign-up"
                   variant="button"
-                  color="info"
                   fontWeight="medium"
-                  textGradient
+                  sx={{
+                    color: "#fff !important",
+                    "&:hover": { color: "rgba(255,255,255,0.9) !important" },
+                  }}
                 >
                   Regístrate
                 </MDTypography>

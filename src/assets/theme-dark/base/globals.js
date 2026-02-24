@@ -18,7 +18,7 @@ Coded by www.creative-tim.com
 // Material Dashboard 2 React Base Styles
 import colors from "assets/theme-dark/base/colors";
 
-const { info, dark, white } = colors; // Ensure 'dark' and 'white' are available in your colors.js
+const { info, dark, white, background } = colors; // Ensure 'dark', 'white' and 'background' are available in your colors.js
 
 const globals = {
   html: {
@@ -42,13 +42,15 @@ const globals = {
     // **IMPORTANT FIX:** Explicitly set dark background and light text for dark mode
     // This will ensure the default document background and text are correct,
     // which the dialog often inherits if no specific styles are applied.
-    backgroundColor: dark.main, // Use a primary dark color for the background
+    backgroundColor: background.default, // Use a primary dark color for the background
+    backgroundImage: "linear-gradient(135deg, #2a0b4d 0%, #3e1b6b 50%, #291A40 100%)",
+    backgroundAttachment: "fixed",
     color: white.main, // Use a light color for the default text
     "&::-webkit-scrollbar": {
       width: "10px",
     },
     "&::-webkit-scrollbar-track": {
-      background: dark.main, // Dark scrollbar track
+      background: background.default, // Dark scrollbar track
     },
     "&::-webkit-scrollbar-thumb": {
       backgroundColor: info.main, // Info color for scrollbar thumb

@@ -335,6 +335,64 @@ export const ResellerProvider = ({ children }) => {
     [token, API_URL]
   );
 
+  const toggleUserBlock = useCallback(
+    async (id) => {
+      setLoading(true);
+      setError(null);
+      console.log(`ResellerContext: Attempting to toggle block for user with ID: ${id}`);
+      try {
+        if (!token) {
+          console.warn("ResellerContext: No token available for toggleUserBlock.");
+          toast.warn("No autenticado. Por favor, inicie sesión.");
+          setLoading(false);
+          return null;
+        }
+
+        const apiUrl = `${API_URL}/api/auth/users/${id}/toggle-block`;
+        console.log(`ResellerContext: Putting to URL (toggle block): ${apiUrl}`);
+
+        const response = await fetch(apiUrl, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        console.log(`ResellerContext: Toggle Block API Response Status: ${response.status}`);
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("ResellerContext: Toggle Block API Error Data:", errorData);
+          throw new Error(
+            errorData.message || `Error al cambiar estado de bloqueo para usuario con ID ${id}.`
+          );
+        }
+
+        const result = await response.json();
+        console.log("ResellerContext: Toggle Block Result:", result);
+        toast.success(result.message || "Estado de bloqueo actualizado.");
+
+        // Update the specific reseller in the state with the new isBlocked status
+        setResellers((prevResellers) =>
+          prevResellers.map((reseller) =>
+            reseller._id === id ? { ...reseller, isBlocked: result.isBlocked } : reseller
+          )
+        );
+
+        return result.isBlocked;
+      } catch (err) {
+        console.error(`ResellerContext: Error in toggleUserBlock for ID ${id}:`, err);
+        setError(err.message);
+        toast.error(err.message || `Error al cambiar estado de bloqueo para usuario con ID ${id}.`);
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [token, API_URL]
+  );
+
   // Effect to call getResellers on initial mount or when token changes
   useEffect(() => {
     if (token) {
@@ -360,6 +418,7 @@ export const ResellerProvider = ({ children }) => {
     updateReseller,
     deleteReseller, // Corrected from reducereseller
     resetResellerCode,
+    toggleUserBlock,
   };
 
   return <ResellerContext.Provider value={contextValue}>{children}</ResellerContext.Provider>;

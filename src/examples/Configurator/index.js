@@ -128,7 +128,13 @@ function Configurator() {
   });
 
   return (
-    <ConfiguratorRoot variant="permanent" ownerState={{ openConfigurator }}>
+    <ConfiguratorRoot
+      variant="temporary"
+      anchor="right"
+      open={openConfigurator}
+      onClose={handleCloseConfigurator}
+      ownerState={{ openConfigurator }}
+    >
       <MDBox
         display="flex"
         justifyContent="space-between"

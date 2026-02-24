@@ -18,7 +18,7 @@ Coded by www.creative-tim.com
   you can customize the states for the different components here.
 */
 
-import { createContext, useContext, useReducer, useMemo } from "react";
+import { createContext, useContext, useReducer, useMemo, useEffect } from "react";
 
 // prop-types is a library for typechecking of props
 import PropTypes from "prop-types";
@@ -72,7 +72,7 @@ function reducer(state, action) {
 function MaterialUIControllerProvider({ children }) {
   const initialState = {
     miniSidenav: false,
-    transparentSidenav: true,
+    transparentSidenav: false,
     whiteSidenav: false,
     sidenavColor: "info",
     transparentNavbar: true,
@@ -80,12 +80,21 @@ function MaterialUIControllerProvider({ children }) {
     openConfigurator: false,
     direction: "ltr",
     layout: "dashboard",
-    darkMode: false,
+    darkMode: true,
   };
 
-  const [controller, dispatch] = useReducer(reducer, initialState);
+  // Load saved settings from localStorage
+  const savedSettings = JSON.parse(localStorage.getItem("material-ui-settings") || "{}");
+  const mergedState = { ...initialState, ...savedSettings };
+
+  const [controller, dispatch] = useReducer(reducer, mergedState);
 
   const value = useMemo(() => [controller, dispatch], [controller, dispatch]);
+
+  // Save settings to localStorage whenever controller changes
+  useEffect(() => {
+    localStorage.setItem("material-ui-settings", JSON.stringify(controller));
+  }, [controller]);
 
   return <MaterialUI.Provider value={value}>{children}</MaterialUI.Provider>;
 }

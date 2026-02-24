@@ -29,6 +29,7 @@ import { ProductProvider } from "./contexts/ProductContext";
 import { ResellerProvider } from "./contexts/ResellerContext";
 import { LabelProvider } from "contexts/LabelContext";
 import { VideoProvider } from "contexts/VideoContext";
+import { VariantProvider } from "contexts/VariantContext";
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -45,7 +46,9 @@ root.render(
             <ResellerProvider>
               <LabelProvider>
                 <VideoProvider>
-                  <App />
+                  <VariantProvider>
+                    <App />
+                  </VariantProvider>
                 </VideoProvider>
               </LabelProvider>
             </ResellerProvider>

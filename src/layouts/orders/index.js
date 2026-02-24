@@ -14,8 +14,15 @@ import Select from "@mui/material/Select";
 import InputLabel from "@mui/material/InputLabel";
 import FormControl from "@mui/material/FormControl";
 import TextField from "@mui/material/TextField";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Switch from "@mui/material/Switch";
 import InputAdornment from "@mui/material/InputAdornment";
 import IconButton from "@mui/material/IconButton";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -44,6 +51,7 @@ function Orders() {
     totalPages,
     totalOrders,
     changeOrderStatus,
+    cleanupPendingOrders,
   } = useOrders();
 
   // Local state for controlling the UI and API queries
@@ -51,21 +59,34 @@ function Orders() {
   const [limit, setLimit] = useState(10);
   const [sort, setSort] = useState("createdAt_desc");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showPending, setShowPending] = useState(() => {
+    return localStorage.getItem("orders-show-pending") === "true";
+  });
+
+  // Cleanup Modal state
+  const [openCleanup, setOpenCleanup] = useState(false);
+  const [cleanupDates, setCleanupDates] = useState({
+    start: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split("T")[0],
+    end: new Date().toISOString().split("T")[0],
+  });
+  const [isCleaning, setIsCleaning] = useState(false);
+
+  // Sync showPending to localStorage
+  useEffect(() => {
+    localStorage.setItem("orders-show-pending", showPending);
+  }, [showPending]);
 
   useEffect(() => {
-    fetchOrders();
+    fetchOrders(page, limit, sort, searchTerm, !showPending);
     const intervalId = setInterval(() => {
       console.log("Auto-refreshing dashboard data...");
-      fetchOrders();
+      fetchOrders(page, limit, sort, searchTerm, !showPending);
     }, 30000); // 30000 milliseconds = 30 seconds
 
     return () => clearInterval(intervalId);
-  }, [fetchOrders]);
+  }, [fetchOrders, page, limit, sort, searchTerm, showPending]);
 
-  // Main data fetching effect
-  useEffect(() => {
-    fetchOrders(page, limit, sort, searchTerm);
-  }, [page, limit, sort, fetchOrders]);
+  // Main data fetching effect removed as it's redundant with the one above
 
   const handlePageChange = (event, value) => {
     setPage(value);
@@ -89,12 +110,35 @@ function Orders() {
     if (page !== 1) {
       setPage(1);
     }
-    fetchOrders(1, limit, sort, searchTerm);
-  }, [limit, sort, searchTerm, fetchOrders, page]);
+    fetchOrders(1, limit, sort, searchTerm, !showPending);
+  }, [limit, sort, searchTerm, fetchOrders, page, showPending]);
 
   const handleKeyPress = (event) => {
     if (event.key === "Enter") {
       handleSearch();
+    }
+  };
+
+  const handleTogglePending = (event) => {
+    setShowPending(event.target.checked);
+    setPage(1);
+  };
+
+  const handleCleanupSubmit = async () => {
+    if (!cleanupDates.start || !cleanupDates.end) {
+      toast.error("Por favor, seleccione ambas fechas.");
+      return;
+    }
+    setIsCleaning(true);
+    try {
+      const result = await cleanupPendingOrders(cleanupDates.start, cleanupDates.end);
+      toast.success(result.message);
+      setOpenCleanup(false);
+      fetchOrders(page, limit, sort, searchTerm, !showPending);
+    } catch (err) {
+      toast.error(err.message || "Error al limpiar carritos.");
+    } finally {
+      setIsCleaning(false);
     }
   };
 
@@ -103,7 +147,7 @@ function Orders() {
       try {
         await changeOrderStatus(orderId, newStatus);
         toast.success(`Estado del pedido cambiado.`);
-        fetchOrders(page, limit, sort, searchTerm);
+        fetchOrders(page, limit, sort, searchTerm, !showPending);
       } catch (err) {
         toast.error(err.message || "Error al cambiar el estado del pedido.");
       }
@@ -196,27 +240,62 @@ function Orders() {
                       />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <FormControl variant="outlined" fullWidth>
-                        <InputLabel>Ordenar Por</InputLabel>
-                        <Select value={sort} onChange={handleSortChange} label="Ordenar Por">
-                          <MenuItem value="createdAt_desc">Fecha (Más Reciente)</MenuItem>
-                          <MenuItem value="createdAt_asc">Fecha (Más Antigua)</MenuItem>
-                          <MenuItem value="totalPrice_desc">Total (Mayor a Menor)</MenuItem>
-                          <MenuItem value="totalPrice_asc">Total (Menor a Mayor)</MenuItem>
-                          <MenuItem value="status_asc">Estado (A-Z)</MenuItem>
-                        </Select>
-                      </FormControl>
+                      <TextField
+                        select
+                        variant="outlined"
+                        fullWidth
+                        value={sort}
+                        onChange={handleSortChange}
+                        label="Ordenar Por"
+                      >
+                        <MenuItem value="createdAt_desc">Fecha (Más Reciente)</MenuItem>
+                        <MenuItem value="createdAt_asc">Fecha (Más Antigua)</MenuItem>
+                        <MenuItem value="totalPrice_desc">Total (Mayor a Menor)</MenuItem>
+                        <MenuItem value="totalPrice_asc">Total (Menor a Mayor)</MenuItem>
+                        <MenuItem value="status_asc">Estado (A-Z)</MenuItem>
+                      </TextField>
                     </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <FormControl variant="outlined" fullWidth>
-                        <InputLabel>Mostrar</InputLabel>
-                        <Select value={limit} onChange={handleLimitChange} label="Mostrar">
-                          <MenuItem value={5}>5</MenuItem>
-                          <MenuItem value={10}>10</MenuItem>
-                          <MenuItem value={20}>20</MenuItem>
-                          <MenuItem value={50}>50</MenuItem>
-                        </Select>
-                      </FormControl>
+                    <Grid item xs={12} sm={4} md={3}>
+                      <TextField
+                        select
+                        variant="outlined"
+                        fullWidth
+                        value={limit}
+                        onChange={handleLimitChange}
+                        label="Mostrar"
+                      >
+                        <MenuItem value={5}>5</MenuItem>
+                        <MenuItem value={10}>10</MenuItem>
+                        <MenuItem value={20}>20</MenuItem>
+                        <MenuItem value={50}>50</MenuItem>
+                      </TextField>
+                    </Grid>
+                    <Grid item xs={12} sm={8} md={3}>
+                      <MDBox display="flex" justifyContent="space-around" alignItems="center">
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={showPending}
+                              onChange={handleTogglePending}
+                              color="info"
+                            />
+                          }
+                          label={
+                            <MDTypography variant="button" fontWeight="medium" color="text">
+                              Mostrar Carritos (Pendientes)
+                            </MDTypography>
+                          }
+                        />
+                        <MDButton
+                          variant="gradient"
+                          color="error"
+                          size="small"
+                          startIcon={<DeleteSweepIcon />}
+                          onClick={() => setOpenCleanup(true)}
+                        >
+                          Limpiar Carritos
+                        </MDButton>
+                      </MDBox>
                     </Grid>
                   </Grid>
                 </MDBox>
@@ -253,6 +332,61 @@ function Orders() {
           </Grid>
         </Grid>
       </MDBox>
+
+      {/* Cleanup Modal */}
+      <Dialog open={openCleanup} onClose={() => !isCleaning && setOpenCleanup(false)}>
+        <DialogTitle>Limpieza de Carritos Abandonados</DialogTitle>
+        <DialogContent>
+          <MDBox pt={2} px={1}>
+            <MDTypography variant="body2" color="text" mb={3}>
+              Esta acción eliminará todos los pedidos con estado <strong>"Pendiente"</strong> que
+              hayan sido creados en el rango de fechas seleccionado. Esta acción{" "}
+              <strong>no se puede deshacer</strong>.
+            </MDTypography>
+            <Grid container spacing={3}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Fecha Inicio"
+                  type="date"
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                  value={cleanupDates.start}
+                  onChange={(e) => setCleanupDates({ ...cleanupDates, start: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Fecha Fin"
+                  type="date"
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                  value={cleanupDates.end}
+                  onChange={(e) => setCleanupDates({ ...cleanupDates, end: e.target.value })}
+                />
+              </Grid>
+            </Grid>
+          </MDBox>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <MDButton
+            variant="text"
+            color="secondary"
+            onClick={() => setOpenCleanup(false)}
+            disabled={isCleaning}
+          >
+            Cancelar
+          </MDButton>
+          <MDButton
+            variant="gradient"
+            color="error"
+            onClick={handleCleanupSubmit}
+            disabled={isCleaning}
+          >
+            {isCleaning ? <CircularProgress size={24} color="inherit" /> : "Confirmar Eliminación"}
+          </MDButton>
+        </DialogActions>
+      </Dialog>
+
       <Footer />
     </DashboardLayout>
   );

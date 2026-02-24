@@ -18,9 +18,9 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import Pagination from "@mui/material/Pagination";
 import MenuItem from "@mui/material/MenuItem";
-// --- IMPORTS (UNCHANGED) ---
 import InputAdornment from "@mui/material/InputAdornment";
 import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -153,16 +153,20 @@ function Products() {
             sx={{ objectFit: "cover" }}
           />
           <MDBox>
-            <MDTypography
-              component={Link}
-              to={`/products/details/${row.original._id}`}
-              variant="button"
-              fontWeight="medium"
-              color="info"
-              sx={{ "&:hover": { textDecoration: "underline" } }}
-            >
-              {row.original.name}
-            </MDTypography>
+            <Tooltip title={row.original.name} placement="top" arrow>
+              <MDTypography
+                component={Link}
+                to={`/products/details/${row.original._id}`}
+                variant="button"
+                fontWeight="medium"
+                color="info"
+                sx={{ "&:hover": { textDecoration: "underline" } }}
+              >
+                {row.original.name?.length > 30
+                  ? `${row.original.name.substring(0, 30)}...`
+                  : row.original.name}
+              </MDTypography>
+            </Tooltip>
             <MDTypography variant="caption" display="block" color="text">
               Cód: {row.original.code}
             </MDTypography>
@@ -184,13 +188,13 @@ function Products() {
       Header: "Stock",
       accessor: "countInStock",
       Cell: ({ value }) => (
-        <MDBox>
+        <MDBox width="8rem">
           <MDTypography variant="caption" color="text" fontWeight="medium">
             {value} unidades
           </MDTypography>
           <MDProgress
             variant="gradient"
-            value={(value / 100) * 100}
+            value={value >= 100 ? 100 : value}
             color={value > 20 ? "success" : value > 5 ? "warning" : "error"}
           />
         </MDBox>
@@ -212,31 +216,52 @@ function Products() {
         <MDBox display="flex">
           {canManageProducts && (
             <>
+              {row.original.code?.includes("_") && (
+                <MDTypography
+                  component={Link}
+                  to={`/products/create-batch`}
+                  state={{ templateProduct: row.original }}
+                  variant="caption"
+                  color="text"
+                  fontWeight="medium"
+                  title="Añadir variante a este modelo"
+                  sx={{ cursor: "pointer", marginRight: 1 }}
+                >
+                  <Icon color="success" sx={{ fontSize: "24px" }}>
+                    library_add
+                  </Icon>
+                </MDTypography>
+              )}
               <MDTypography
                 component={Link}
                 to={`/products/edit/${row.original._id}`}
                 variant="caption"
                 color="text"
                 fontWeight="medium"
+                title="Editar este producto"
                 sx={{ cursor: "pointer", marginRight: 1 }}
               >
                 <Icon color="info" sx={{ fontSize: "24px" }}>
                   edit
                 </Icon>
               </MDTypography>
-              {/* <MDTypography
+              <MDTypography
                 component="a"
                 href="#"
-                onClick={() => handleDeleteProduct(row.original._id)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleDeleteProduct(row.original._id);
+                }}
                 variant="caption"
                 color="text"
                 fontWeight="medium"
+                title="Eliminar producto"
                 sx={{ cursor: "pointer" }}
               >
                 <Icon color="error" sx={{ fontSize: "24px" }}>
                   delete
                 </Icon>
-              </MDTypography> */}
+              </MDTypography>
             </>
           )}
         </MDBox>
@@ -330,23 +355,41 @@ function Products() {
                 <MDTypography variant="h6" color="white">
                   Gestión de Productos
                 </MDTypography>
-                {/* {canManageProducts && (
-                  <MDButton
-                    component={Link}
-                    to="/products/create"
-                    variant="gradient"
-                    sx={{
-                      backgroundColor: "#333",
-                      color: "#FFFFFF",
-                      "&:hover": {
+                {canManageProducts && (
+                  <MDBox display="flex" gap={1}>
+                    <MDButton
+                      component={Link}
+                      to="/products/create-batch"
+                      variant="outlined"
+                      sx={{
+                        color: "#fff !important",
+                        borderColor: "rgba(255,255,255,0.7) !important",
+                        "&:hover": {
+                          borderColor: "#fff !important",
+                          backgroundColor: "rgba(255, 255, 255, 0.15)",
+                        },
+                      }}
+                    >
+                      <Icon sx={{ fontWeight: "bold" }}>layers</Icon>
+                      &nbsp;Producto Múltiple
+                    </MDButton>
+                    <MDButton
+                      component={Link}
+                      to="/products/create"
+                      variant="gradient"
+                      sx={{
                         backgroundColor: "#333",
-                      },
-                    }}
-                  >
-                    <Icon sx={{ fontWeight: "bold" }}>add</Icon>
-                    &nbsp;añadir producto
-                  </MDButton>
-                )} */}
+                        color: "#FFFFFF",
+                        "&:hover": {
+                          backgroundColor: "#333",
+                        },
+                      }}
+                    >
+                      <Icon sx={{ fontWeight: "bold" }}>add</Icon>
+                      &nbsp;Producto Simple
+                    </MDButton>
+                  </MDBox>
+                )}
               </MDBox>
               <MDBox p={3}>
                 <MDBox mb={3}>
@@ -380,17 +423,17 @@ function Products() {
                 />
 
                 {pages > 1 && (
-                  <MDBox display="flex" justifyContent="center" alignItems="center" mt={3} gap={2}>                 
-                  <Pagination
-                    count={pages}
-                    page={page}
-                    onChange={handlePageChange}
-                    color="info"
-                    size="large"
-                    siblingCount={1}
-                    boundaryCount={1}
-                  />
-                </MDBox>
+                  <MDBox display="flex" justifyContent="center" alignItems="center" mt={3} gap={2}>
+                    <Pagination
+                      count={pages}
+                      page={page}
+                      onChange={handlePageChange}
+                      color="info"
+                      size="large"
+                      siblingCount={1}
+                      boundaryCount={1}
+                    />
+                  </MDBox>
                 )}
               </MDBox>
             </Card>

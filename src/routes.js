@@ -9,6 +9,9 @@ import Dashboard from "layouts/dashboard";
 
 import Profile from "layouts/profile";
 import Products from "layouts/products";
+import CreateProduct from "layouts/products/templates/CreateProduct";
+import CreateProductWithVariants from "layouts/products/templates/CreateProductWithVariants";
+import Variants from "layouts/variants";
 import Orders from "layouts/orders";
 import CreateOrder from "layouts/orders/templates/CreateOrder";
 import EditOrder from "layouts/orders/templates/EditOrder";
@@ -59,6 +62,31 @@ const routes = [
     component: <Products />,
     // Roles with double quotes for Prettier compliance
     allowedRoles: ["Administrador", "Editor"], // All authenticated users
+  },
+  {
+    type: "none",
+    name: "Crear Producto",
+    key: "create-product",
+    route: "/products/create",
+    component: <CreateProduct />,
+    allowedRoles: ["Administrador", "Editor"],
+  },
+  {
+    type: "none",
+    name: "Crear Producto con Variantes",
+    key: "create-product-batch",
+    route: "/products/create-batch",
+    component: <CreateProductWithVariants />,
+    allowedRoles: ["Administrador", "Editor"],
+  },
+  {
+    type: "collapse",
+    name: "Variantes",
+    key: "variantes",
+    icon: <Icon fontSize="small">tune</Icon>,
+    route: "/variants",
+    component: <Variants />,
+    allowedRoles: ["Administrador", "Editor"],
   },
   {
     type: "collapse",

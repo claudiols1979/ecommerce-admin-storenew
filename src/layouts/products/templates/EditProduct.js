@@ -28,17 +28,25 @@ import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
+
 // Contexts
 import { useProducts } from "contexts/ProductContext";
 import { useAuth } from "contexts/AuthContext";
 import { useLabels } from "contexts/LabelContext";
+import { useVariants } from "contexts/VariantContext";
+import { useMaterialUIController } from "context";
 
 function EditProduct() {
+  const [controller] = useMaterialUIController();
+  const { darkMode } = controller;
   const navigate = useNavigate();
   const { id } = useParams();
   const { getProductById, updateProduct, loading: productLoading } = useProducts();
   const { user } = useAuth();
   const { labels, fetchLabels, assignLabelsToProduct, loading: labelsLoading } = useLabels();
+  const { attributes, fetchAttributes } = useVariants();
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -51,6 +59,7 @@ function EditProduct() {
     subcategory: "",
     brand: "",
     category: "",
+    codigoCabys: "",
     volume: "",
     gender: "",
     tags: "",
@@ -80,10 +89,8 @@ function EditProduct() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
   const [selectedLabelIds, setSelectedLabelIds] = useState([]);
-  const [currentColorInput, setCurrentColorInput] = useState("");
-  const [currentSizeInput, setCurrentSizeInput] = useState("");
-  const [currentMaterialInput, setCurrentMaterialInput] = useState("");
-  const [currentFeatureInput, setCurrentFeatureInput] = useState("");
+  const [materialInput, setMaterialInput] = useState("");
+  const [featureInput, setFeatureInput] = useState("");
 
   const genderOptions = [
     { value: "Hombre", label: "Hombre" },
@@ -99,6 +106,17 @@ function EditProduct() {
     { value: "Adolescente", label: "Adolescente" },
     { value: "Adulto", label: "Adulto" },
   ];
+
+  // Rich Text Editor Modules
+  const quillModules = {
+    toolbar: [
+      [{ header: [1, 2, 3, false] }],
+      ["bold", "italic", "underline", "strike"],
+      [{ color: [] }, { background: [] }],
+      [{ list: "ordered" }, { list: "bullet" }],
+      ["link", "clean"],
+    ],
+  };
 
   const voltageOptions = [
     { value: "110V", label: "110V" },
@@ -132,6 +150,7 @@ function EditProduct() {
         setFetchError(null);
 
         await fetchLabels();
+        await fetchAttributes();
 
         if (typeof getProductById !== "function") {
           throw new Error("La función para obtener el producto no está disponible.");
@@ -146,6 +165,7 @@ function EditProduct() {
             department: fetchedProduct.department || "",
             subcategory: fetchedProduct.subcategory || "",
             brand: fetchedProduct.brand || "",
+            codigoCabys: fetchedProduct.codigoCabys || "",
             category: fetchedProduct.category || "",
             volume: fetchedProduct.volume || "",
             gender: fetchedProduct.gender || "Unisex",
@@ -193,7 +213,7 @@ function EditProduct() {
     if (id) {
       fetchProductAndLabels();
     }
-  }, [id, getProductById, navigate, fetchLabels]);
+  }, [id, getProductById, navigate, fetchLabels, fetchAttributes]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -218,6 +238,11 @@ function EditProduct() {
       setProductData((prev) => ({ ...prev, [name]: value }));
     }
     setFormErrors((prev) => ({ ...prev, [name]: undefined }));
+  };
+
+  const handleDescriptionChange = (content) => {
+    setProductData((prev) => ({ ...prev, description: content }));
+    setFormErrors((prev) => ({ ...prev, description: undefined }));
   };
 
   const handleStockChange = (amount) => {
@@ -301,7 +326,8 @@ function EditProduct() {
           formData.append(`dimensions[${dim}]`, productData.dimensions[dim])
         );
       } else if (Array.isArray(productData[key])) {
-        productData[key].forEach((item) => formData.append(`${key}[]`, item));
+        // Enviar arrays siempre como JSON string, para que backend pueda diferenciarlos y aceptar arrays vacíos
+        formData.append(key, JSON.stringify(productData[key]));
       } else if (key === "tags") {
         productData.tags
           .split(",")
@@ -415,26 +441,67 @@ function EditProduct() {
                     />
                   </Grid>
                   <Grid item xs={12}>
-                    <MDTypography variant="caption" color="text" fontWeight="bold" sx={{ mb: 1 }}>
-                      Descripción
+                    <MDTypography variant="caption" color="text" fontWeight="bold">
+                      Descripción *
                     </MDTypography>
-                    <MDTypography
-                      variant="body2"
-                      color="text"
-                      disabled
+                    <MDBox
+                      mt={1}
                       sx={{
-                        whiteSpace: "pre-line",
-                        p: 1,
-                        border: "1px solid",
-                        borderColor: "grey.300",
-                        borderRadius: 1,
-                        bgcolor: "grey.50",
-                        minHeight: "80px",
+                        "& .quill": {
+                          backgroundColor: darkMode ? "#344767" : "#fff",
+                          color: darkMode ? "#fff" : "inherit",
+                          borderRadius: "8px",
+                        },
+                        "& .ql-toolbar": {
+                          borderColor: darkMode
+                            ? "rgba(255, 255, 255, 0.2)"
+                            : "rgba(0, 0, 0, 0.23)",
+                          borderTopLeftRadius: "8px",
+                          borderTopRightRadius: "8px",
+                        },
+                        "& .ql-container": {
+                          borderColor: darkMode
+                            ? "rgba(255, 255, 255, 0.2)"
+                            : "rgba(0, 0, 0, 0.23)",
+                          borderBottomLeftRadius: "8px",
+                          borderBottomRightRadius: "8px",
+                          minHeight: "150px",
+                        },
+                        "& .ql-stroke": {
+                          stroke: darkMode ? "#fff" : "#444",
+                        },
+                        "& .ql-fill": {
+                          fill: darkMode ? "#fff" : "#444",
+                        },
+                        "& .ql-picker": {
+                          color: darkMode ? "#fff !important" : "#444 !important",
+                        },
+                        "& .ql-picker-options": {
+                          backgroundColor: darkMode ? "#344767 !important" : "#fff !important",
+                          borderColor: darkMode
+                            ? "rgba(255, 255, 255, 0.2) !important"
+                            : "rgba(0, 0, 0, 0.23) !important",
+                        },
+                        "& .ql-picker-item": {
+                          color: darkMode ? "#fff !important" : "#444 !important",
+                        },
+                        "& .ql-picker-item:hover": {
+                          color: darkMode ? "#1A73E8 !important" : "#000 !important",
+                        },
                       }}
                     >
-                      {stripHtmlWithBreaks(productData.description) ||
-                        "No hay descripción disponible."}
-                    </MDTypography>
+                      <ReactQuill
+                        theme="snow"
+                        value={productData.description}
+                        onChange={handleDescriptionChange}
+                        modules={quillModules}
+                      />
+                    </MDBox>
+                    {formErrors.description && (
+                      <MDTypography variant="caption" color="error">
+                        {formErrors.description}
+                      </MDTypography>
+                    )}
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <MDInput
@@ -480,6 +547,17 @@ function EditProduct() {
                       fullWidth
                       error={!!formErrors.subcategory}
                       helperText={formErrors.subcategory}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <MDInput
+                      label="Código CABYS (13 dígitos)"
+                      name="codigoCabys"
+                      value={productData.codigoCabys || ""}
+                      onChange={handleChange}
+                      fullWidth
+                      error={!!formErrors.codigoCabys}
+                      helperText={formErrors.codigoCabys}
                     />
                   </Grid>
                   {/* <Grid item xs={12} sm={6}>
@@ -530,7 +608,8 @@ function EditProduct() {
                         display="flex"
                         alignItems="center"
                         sx={{
-                          border: "1px solid #d2d6da",
+                          border: "1px solid",
+                          borderColor: "divider",
                           borderRadius: "0.375rem",
                           p: "2px",
                           mt: 1,
@@ -538,8 +617,7 @@ function EditProduct() {
                       >
                         <IconButton
                           onClick={() => handleStockChange(-1)}
-                          //disabled={productData.countInStock <= 0}
-                          disabled
+                          disabled={productData.countInStock <= 0}
                         >
                           <RemoveCircleOutlineIcon />
                         </IconButton>
@@ -565,7 +643,6 @@ function EditProduct() {
                         name="countInStock"
                         type="number"
                         value={productData.countInStock}
-                        disabled
                         onChange={handleChange}
                         fullWidth
                         required
@@ -627,148 +704,136 @@ function EditProduct() {
                       ))}
                     </MDInput>
                   </Grid>
+                  {attributes &&
+                    attributes.map((attr) => {
+                      const refLower = attr.ref ? attr.ref.toLowerCase() : "";
+                      let targetRef = refLower;
+
+                      if (refLower.includes("color") || refLower.includes("colores")) {
+                        targetRef = "colors";
+                      } else if (refLower.includes("size") || refLower.includes("talla")) {
+                        targetRef = "sizes";
+                      } else if (refLower.includes("material")) {
+                        targetRef = "materials";
+                      } else {
+                        targetRef = "features";
+                      }
+
+                      return (
+                        <Grid item xs={12} sm={6} key={attr._id}>
+                          <MDInput
+                            select
+                            SelectProps={{
+                              displayEmpty: true,
+                              MenuProps: { PaperProps: { style: { maxHeight: 250 } } },
+                            }}
+                            label={`Seleccionar ${attr.name}`}
+                            value={
+                              productData[targetRef] && productData[targetRef].length > 0
+                                ? productData[targetRef][0]
+                                : ""
+                            }
+                            onChange={(e) => {
+                              const { value } = e.target;
+                              // Solo actualizar si hay un valor seleccionado
+                              if (value) {
+                                setProductData((prev) => ({
+                                  ...prev,
+                                  [targetRef]: prev[targetRef].includes(value)
+                                    ? prev[targetRef]
+                                    : [...prev[targetRef], value],
+                                }));
+                              }
+                            }}
+                            fullWidth
+                          >
+                            <MenuItem value="">
+                              <em>Seleccione una opción...</em>
+                            </MenuItem>
+                            {Array.isArray(attr.values) &&
+                              attr.values.map((v) => (
+                                <MenuItem key={v._id || v.value} value={v.value}>
+                                  {v.value}
+                                </MenuItem>
+                              ))}
+                          </MDInput>
+                        </Grid>
+                      );
+                    })}
+
+                  {/* Entrada manual de materiales */}
                   <Grid item xs={12} sm={6}>
-                    <MDTypography variant="h6" mb={1}>
-                      Colores
-                    </MDTypography>
-                    <MDBox display="flex" alignItems="center" mb={1}>
+                    <MDBox display="flex" alignItems="flex-start">
                       <MDInput
-                        value={currentColorInput}
-                        onChange={(e) => setCurrentColorInput(e.target.value)}
-                        placeholder="Agregar color"
+                        label="Agregar Material (manual)"
+                        value={materialInput}
+                        onChange={(e) => setMaterialInput(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddItem("materials", materialInput, setMaterialInput);
+                          }
+                        }}
                         fullWidth
                       />
                       <MDButton
                         variant="gradient"
                         color="info"
                         size="small"
-                        onClick={() =>
-                          handleAddItem("colors", currentColorInput, setCurrentColorInput)
-                        }
-                        sx={{ ml: 1 }}
+                        sx={{ ml: 1, minHeight: "44px" }}
+                        onClick={() => handleAddItem("materials", materialInput, setMaterialInput)}
                       >
-                        Agregar
+                        <Icon>add</Icon>
                       </MDButton>
                     </MDBox>
-                    <MDBox display="flex" flexWrap="wrap" gap={0.5}>
-                      {productData.colors.map((color, index) => (
+                    <MDBox display="flex" flexWrap="wrap" gap={1} mt={1}>
+                      {productData.materials.map((m) => (
                         <Chip
-                          key={index}
-                          label={color}
-                          onDelete={() => handleRemoveItem("colors", color)}
-                          color="primary"
+                          key={m}
+                          label={m}
+                          onDelete={() => handleRemoveItem("materials", m)}
+                          color="info"
                           variant="outlined"
+                          size="small"
                         />
                       ))}
                     </MDBox>
                   </Grid>
 
-                  {/* Tamaños */}
+                  {/* Entrada manual de características */}
                   <Grid item xs={12} sm={6}>
-                    <MDTypography variant="h6" mb={1}>
-                      Tamaños
-                    </MDTypography>
-                    <MDBox display="flex" alignItems="center" mb={1}>
+                    <MDBox display="flex" alignItems="flex-start">
                       <MDInput
-                        value={currentSizeInput}
-                        onChange={(e) => setCurrentSizeInput(e.target.value)}
-                        placeholder="Agregar tamaño"
+                        label="Agregar Característica (manual)"
+                        value={featureInput}
+                        onChange={(e) => setFeatureInput(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddItem("features", featureInput, setFeatureInput);
+                          }
+                        }}
                         fullWidth
                       />
                       <MDButton
                         variant="gradient"
                         color="info"
                         size="small"
-                        onClick={() =>
-                          handleAddItem("sizes", currentSizeInput, setCurrentSizeInput)
-                        }
-                        sx={{ ml: 1 }}
+                        sx={{ ml: 1, minHeight: "44px" }}
+                        onClick={() => handleAddItem("features", featureInput, setFeatureInput)}
                       >
-                        Agregar
+                        <Icon>add</Icon>
                       </MDButton>
                     </MDBox>
-                    <MDBox display="flex" flexWrap="wrap" gap={0.5}>
-                      {productData.sizes.map((size, index) => (
+                    <MDBox display="flex" flexWrap="wrap" gap={1} mt={1}>
+                      {productData.features.map((f) => (
                         <Chip
-                          key={index}
-                          label={size}
-                          onDelete={() => handleRemoveItem("sizes", size)}
-                          color="secondary"
+                          key={f}
+                          label={f}
+                          onDelete={() => handleRemoveItem("features", f)}
+                          color="info"
                           variant="outlined"
-                        />
-                      ))}
-                    </MDBox>
-                  </Grid>
-
-                  {/* Materiales */}
-                  <Grid item xs={12} sm={6}>
-                    <MDTypography variant="h6" mb={1}>
-                      Materiales
-                    </MDTypography>
-                    <MDBox display="flex" alignItems="center" mb={1}>
-                      <MDInput
-                        value={currentMaterialInput}
-                        onChange={(e) => setCurrentMaterialInput(e.target.value)}
-                        placeholder="Agregar material"
-                        fullWidth
-                      />
-                      <MDButton
-                        variant="gradient"
-                        color="info"
-                        size="small"
-                        onClick={() =>
-                          handleAddItem("materials", currentMaterialInput, setCurrentMaterialInput)
-                        }
-                        sx={{ ml: 1 }}
-                      >
-                        Agregar
-                      </MDButton>
-                    </MDBox>
-                    <MDBox display="flex" flexWrap="wrap" gap={0.5}>
-                      {productData.materials.map((material, index) => (
-                        <Chip
-                          key={index}
-                          label={material}
-                          onDelete={() => handleRemoveItem("materials", material)}
-                          color="success"
-                          variant="outlined"
-                        />
-                      ))}
-                    </MDBox>
-                  </Grid>
-
-                  {/* Características especiales */}
-                  <Grid item xs={12} sm={6}>
-                    <MDTypography variant="h6" mb={1}>
-                      Características Especiales
-                    </MDTypography>
-                    <MDBox display="flex" alignItems="center" mb={1}>
-                      <MDInput
-                        value={currentFeatureInput}
-                        onChange={(e) => setCurrentFeatureInput(e.target.value)}
-                        placeholder="Agregar característica"
-                        fullWidth
-                      />
-                      <MDButton
-                        variant="gradient"
-                        color="info"
-                        size="small"
-                        onClick={() =>
-                          handleAddItem("features", currentFeatureInput, setCurrentFeatureInput)
-                        }
-                        sx={{ ml: 1 }}
-                      >
-                        Agregar
-                      </MDButton>
-                    </MDBox>
-                    <MDBox display="flex" flexWrap="wrap" gap={0.5}>
-                      {productData.features.map((feature, index) => (
-                        <Chip
-                          key={index}
-                          label={feature}
-                          onDelete={() => handleRemoveItem("features", feature)}
-                          color="warning"
-                          variant="outlined"
+                          size="small"
                         />
                       ))}
                     </MDBox>
@@ -928,13 +993,13 @@ function EditProduct() {
                   {/* Peso */}
                   <Grid item xs={12} sm={6}>
                     <MDInput
-                      label="Peso (kg)"
+                      label="Peso (gramos)"
                       name="weight"
                       type="number"
                       value={productData.weight}
                       onChange={handleChange}
                       fullWidth
-                      inputProps={{ min: 0, step: "0.1" }}
+                      inputProps={{ min: 0, step: "1" }}
                     />
                   </Grid>
 
@@ -947,9 +1012,8 @@ function EditProduct() {
                       {Object.keys(productData.resellerPrices).map((cat) => (
                         <Grid item xs={12} sm={6} md={4} key={cat}>
                           <MDInput
-                            label={`Precio ${cat.toUpperCase()}`}
+                            label={`Precio Nivel ${cat.replace("cat", "")}`}
                             name={`resellerPrices.${cat}`}
-                            disabled
                             type="number"
                             value={productData.resellerPrices[cat]}
                             onChange={handleChange}

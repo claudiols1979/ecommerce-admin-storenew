@@ -54,10 +54,6 @@ const StatusCell = ({ status }) => {
       translatedStatus = "Enviado";
       color = "success";
       break;
-    case "expired":
-      translatedStatus = "Vencido";
-      color = "error";
-      break;
     default:
       translatedStatus = status.charAt(0).toUpperCase() + status.slice(1);
       color = "text";

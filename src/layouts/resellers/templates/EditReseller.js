@@ -24,6 +24,12 @@ import MDButton from "components/MDButton";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
+import DataTable from "examples/Tables/DataTable";
+
+// Import mapping component
+import CRAddressSelector from "components/CRAddressSelector";
+
+import API_URL from "config";
 
 // Contexts
 import { useResellers } from "contexts/ResellerContext";
@@ -49,7 +55,13 @@ function EditReseller() {
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [address, setAddress] = useState("");
+  const [provincia, setProvincia] = useState("");
+  const [canton, setCanton] = useState("");
+  const [distrito, setDistrito] = useState("");
   const [resellerCategory, setResellerCategory] = useState("");
+
+  const [invoices, setInvoices] = useState([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
 
   // Access control: Only 'Administrador' and 'Editor' can edit resellers
   const canEditReseller = user?.role === "Administrador" || user?.role === "Editor";
@@ -68,6 +80,9 @@ function EditReseller() {
           setEmail(data.email || "");
           setPhoneNumber(data.phoneNumber || "");
           setAddress(data.address || "");
+          setProvincia(data.provincia || "");
+          setCanton(data.canton || "");
+          setDistrito(data.distrito || "");
           setResellerCategory(data.resellerCategory || "");
         } else {
           setFetchError("Revendedor no encontrado.");
@@ -87,6 +102,37 @@ function EditReseller() {
     }
   }, [id, getResellerById]);
 
+  // Fetch electronic invoices
+  useEffect(() => {
+    const fetchInvoices = async () => {
+      setInvoicesLoading(true);
+      try {
+        const token = user?.token;
+        if (!token) return;
+
+        const response = await fetch(`${API_URL}/api/electronic-invoices/user/${id}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setInvoices(data);
+        }
+      } catch (err) {
+        console.error("Error fetching electronic invoices:", err);
+      } finally {
+        setInvoicesLoading(false);
+      }
+    };
+    if (id) {
+      fetchInvoices();
+    }
+  }, [id, user?.token]);
+
   // Function to check if any changes have been made to enable/disable the save button
   const hasChanges = useCallback(() => {
     if (!currentReseller) return false; // No current data, so no changes to compare
@@ -97,9 +143,23 @@ function EditReseller() {
       email !== currentReseller.email ||
       phoneNumber !== currentReseller.phoneNumber ||
       address !== currentReseller.address ||
+      provincia !== currentReseller.provincia ||
+      canton !== currentReseller.canton ||
+      distrito !== currentReseller.distrito ||
       resellerCategory !== currentReseller.resellerCategory
     );
-  }, [firstName, lastName, email, phoneNumber, address, resellerCategory, currentReseller]);
+  }, [
+    firstName,
+    lastName,
+    email,
+    phoneNumber,
+    address,
+    provincia,
+    canton,
+    distrito,
+    resellerCategory,
+    currentReseller,
+  ]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -127,6 +187,9 @@ function EditReseller() {
       email,
       phoneNumber,
       address,
+      provincia,
+      canton,
+      distrito,
       resellerCategory,
     };
 
@@ -191,7 +254,7 @@ function EditReseller() {
             Acceso Denegado
           </MDTypography>
           <MDTypography variant="body1" color="text">
-            No tienes permiso para editar revendedores.
+            No tienes permiso para editar clientes.
           </MDTypography>
           <MDButton
             onClick={() => navigate("/dashboard")}
@@ -215,20 +278,22 @@ function EditReseller() {
           <Grid item xs={12} lg={8}>
             <Card>
               <MDBox
+                variant="gradient"
+                borderRadius="lg"
                 mx={2}
                 mt={-3}
                 py={3}
                 px={2}
-                variant="gradient"
-                bgColor="info"
-                borderRadius="lg"
-                coloredShadow="info"
                 display="flex"
                 justifyContent="space-between"
                 alignItems="center"
+                sx={{
+                  background: "linear-gradient(135deg, #9b2fbe 0%, #c471ed 50%, #e056a0 100%)",
+                  boxShadow: "0 4px 20px rgba(180, 60, 160, 0.5)",
+                }}
               >
                 <MDTypography variant="h6" color="white">
-                  Editar Revendedor: {currentReseller?.firstName} {currentReseller?.lastName}
+                  Editar Cliente: {currentReseller?.firstName} {currentReseller?.lastName}
                 </MDTypography>
               </MDBox>
               <MDBox p={3} component="form" role="form" onSubmit={handleSubmit}>
@@ -274,8 +339,23 @@ function EditReseller() {
                     />
                   </Grid>
                   <Grid item xs={12}>
+                    <Box mt={2} mb={2}>
+                      <MDTypography variant="h6" fontWeight="medium">
+                        Dirección de Entrega
+                      </MDTypography>
+                    </Box>
+                    <CRAddressSelector
+                      provincia={provincia}
+                      setProvincia={setProvincia}
+                      canton={canton}
+                      setCanton={setCanton}
+                      distrito={distrito}
+                      setDistrito={setDistrito}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
                     <TextField
-                      label="Dirección"
+                      label="Dirección Exacta (Otras Señas)"
                       variant="outlined"
                       fullWidth
                       value={address}
@@ -295,9 +375,9 @@ function EditReseller() {
                         <MenuItem value="">
                           <em>-- Selecciona una Categoría --</em>
                         </MenuItem>
-                        {resellerCategories.map((category) => (
+                        {resellerCategories.map((category, index) => (
                           <MenuItem key={category} value={category}>
-                            {category.toUpperCase()}
+                            Nivel {index + 1}
                           </MenuItem>
                         ))}
                       </Select>
@@ -323,6 +403,77 @@ function EditReseller() {
                     Cancelar
                   </MDButton>
                 </MDBox>
+              </MDBox>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} lg={8}>
+            <Card>
+              <MDBox
+                mx={2}
+                mt={1}
+                py={3}
+                px={2}
+                variant="gradient"
+                bgColor="success"
+                borderRadius="lg"
+                coloredShadow="success"
+              >
+                <MDTypography variant="h6" color="white">
+                  Facturas Electrónicas
+                </MDTypography>
+              </MDBox>
+              <MDBox p={3}>
+                {invoicesLoading ? (
+                  <MDBox display="flex" justifyContent="center">
+                    <CircularProgress color="info" />
+                  </MDBox>
+                ) : (
+                  <DataTable
+                    table={{
+                      columns: [
+                        { Header: "Fecha", accessor: "date", align: "left" },
+                        { Header: "Tipo", accessor: "type", align: "left" },
+                        { Header: "Total", accessor: "total", align: "center" },
+                        { Header: "Estado", accessor: "status", align: "center" },
+                        { Header: "Consecutivo", accessor: "consecutivo", align: "center" },
+                        { Header: "Clave", accessor: "clave", align: "center" },
+                      ],
+                      rows: invoices.map((inv) => ({
+                        date: new Date(inv.fechaEmision).toLocaleString("es-CR"),
+                        type:
+                          inv.tipoDocumento === "01"
+                            ? "Factura Electrónica"
+                            : "Tiquete Electrónico",
+                        total: `₡${inv.totalComprobante?.toLocaleString("es-CR")}`,
+                        status: (
+                          <MDTypography
+                            variant="caption"
+                            color={inv.estado === "error" ? "error" : "success"}
+                            fontWeight="medium"
+                          >
+                            {inv.estado.toUpperCase()}
+                          </MDTypography>
+                        ),
+                        consecutivo: inv.consecutivo || "N/A",
+                        clave: inv.clave ? (
+                          <MDTypography
+                            variant="caption"
+                            sx={{ wordBreak: "break-all", display: "block", maxWidth: "150px" }}
+                          >
+                            {inv.clave}
+                          </MDTypography>
+                        ) : (
+                          "N/A"
+                        ),
+                      })),
+                    }}
+                    isSorted={false}
+                    entriesPerPage={true}
+                    showTotalEntries={true}
+                    noEndBorder
+                  />
+                )}
               </MDBox>
             </Card>
           </Grid>

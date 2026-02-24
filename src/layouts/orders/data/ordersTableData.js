@@ -17,7 +17,7 @@ const statusTranslations = {
   processing: "Procesando",
   shipped: "Enviado",
   delivered: "Entregado",
-  expired: "Expirado",
+  delivered: "Entregado",
 };
 // --- END Status Translation Map ---
 
@@ -57,8 +57,8 @@ const StatusBadge = ({ status }) => {
     case "placed":
       color = "dark";
       break;
-    case "expired":
-      color = "secondary";
+    case "placed":
+      color = "dark";
       break;
     default:
       color = "dark";
@@ -81,7 +81,8 @@ const StatusBadge = ({ status }) => {
 export default function ordersTableData(orders, currentUser, onStatusChange) {
   const columns = [
     { Header: "ID de Pedido", accessor: "orderId", width: "15%", align: "left" },
-    { Header: "Revendedor", accessor: "reseller", width: "20%", align: "left" },
+    { Header: "Revendedor", accessor: "reseller", width: "15%", align: "left" },
+    { Header: "Destino", accessor: "destination", width: "15%", align: "left" },
     { Header: "Fecha", accessor: "orderDate", align: "center" },
     { Header: "Total", accessor: "totalAmount", align: "right" },
     { Header: "Estado", accessor: "status", align: "center" },
@@ -96,8 +97,8 @@ export default function ordersTableData(orders, currentUser, onStatusChange) {
     const totalAmount =
       order.totalPrice?.toLocaleString("es-CR", { style: "currency", currency: "CRC" }) || "N/A";
 
-    // Determine if the order is modifiable (i.e., not cancelled, delivered, or expired)
-    const nonModifiableStatuses = ["cancelled", "delivered", "expired"];
+    // Determine if the order is modifiable (i.e., not cancelled or delivered)
+    const nonModifiableStatuses = ["cancelled", "delivered"];
     const isOrderModifiable = !nonModifiableStatuses.includes(order.status);
 
     return {
@@ -114,6 +115,17 @@ export default function ordersTableData(orders, currentUser, onStatusChange) {
           lastName={order.user?.lastName || "N/A"}
           email={order.user?.email || "N/A"} // Ensure this is correct, previously was customerDetails.email
         />
+      ),
+      destination: (
+        <MDBox display="flex" flexDirection="column">
+          <MDTypography variant="caption" fontWeight="medium" color="text">
+            {order.customerDetails?.provincia || order.customerDetails?.province || "N/A"}
+          </MDTypography>
+          <MDTypography variant="caption" color="text">
+            {order.customerDetails?.canton || order.customerDetails?.city || "N/A"},{" "}
+            {order.customerDetails?.distrito || "N/A"}
+          </MDTypography>
+        </MDBox>
       ),
       orderDate: (
         <MDTypography variant="caption" color="text" fontWeight="medium">
