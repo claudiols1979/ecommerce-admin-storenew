@@ -7,7 +7,6 @@ import { toast } from "react-toastify";
 // @mui material components
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
-import Icon from "@mui/material/Icon";
 import CircularProgress from "@mui/material/CircularProgress";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
@@ -18,6 +17,7 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import Pagination from "@mui/material/Pagination";
 import MenuItem from "@mui/material/MenuItem";
+import Icon from "@mui/material/Icon";
 import InputAdornment from "@mui/material/InputAdornment";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
@@ -27,6 +27,7 @@ import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
 import MDProgress from "components/MDProgress";
+import MDPagination from "components/MDPagination";
 
 // Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
@@ -422,19 +423,62 @@ function Products() {
                   noEndBorder
                 />
 
-                {pages > 1 && (
-                  <MDBox display="flex" justifyContent="center" alignItems="center" mt={3} gap={2}>
-                    <Pagination
-                      count={pages}
-                      page={page}
-                      onChange={handlePageChange}
-                      color="info"
-                      size="large"
-                      siblingCount={1}
-                      boundaryCount={1}
-                    />
-                  </MDBox>
-                )}
+                <MDBox display="flex" justifyContent="center" alignItems="center" p={3}>
+                  {pages > 1 && (
+                    <MDPagination variant="gradient" color="info">
+                      <MDPagination
+                        item
+                        onClick={(e) => handlePageChange(e, page - 1)}
+                        disabled={page === 1}
+                      >
+                        <Icon sx={{ fontWeight: "bold" }}>chevron_left</Icon>
+                      </MDPagination>
+                      {[...Array(pages)].map((_, index) => {
+                        const pageNumber = index + 1;
+                        if (
+                          pageNumber === 1 ||
+                          pageNumber === pages ||
+                          (pageNumber >= page - 2 && pageNumber <= page + 2)
+                        ) {
+                          return (
+                            <MDPagination
+                              item
+                              key={pageNumber}
+                              active={pageNumber === page}
+                              onClick={(e) => handlePageChange(e, pageNumber)}
+                            >
+                              {pageNumber}
+                            </MDPagination>
+                          );
+                        } else if (pageNumber === page - 3 || pageNumber === page + 3) {
+                          return (
+                            <MDTypography
+                              key={pageNumber}
+                              variant="button"
+                              color="secondary"
+                              px={1}
+                            >
+                              ...
+                            </MDTypography>
+                          );
+                        }
+                        return null;
+                      })}
+                      <MDPagination
+                        item
+                        onClick={(e) => handlePageChange(e, page + 1)}
+                        disabled={page === pages}
+                      >
+                        <Icon sx={{ fontWeight: "bold" }}>chevron_right</Icon>
+                      </MDPagination>
+                    </MDPagination>
+                  )}
+                </MDBox>
+                <MDBox display="flex" justifyContent="space-between" alignItems="left" p={2}>
+                  <MDTypography variant="caption" color="text">
+                    {`Mostrando ${products.length} de ${total} productos`}
+                  </MDTypography>
+                </MDBox>
               </MDBox>
             </Card>
           </Grid>

@@ -60,11 +60,11 @@ function Footer({ company, links }) {
         fontSize={size.sm}
         px={1.5}
       >
-        &copy; {new Date().getFullYear()}, hecho con
+        &copy; {new Date().getFullYear()}, Desarrollado
         <MDBox fontSize={size.md} color="text" mb={-0.5} mx={0.25}>
-          <Icon color="inherit" fontSize="inherit">
+          {/* <Icon color="inherit" fontSize="inherit">
             favorite
-          </Icon>
+          </Icon> */}
         </MDBox>
         por
         <Link href={href} target="_blank">
@@ -72,7 +72,7 @@ function Footer({ company, links }) {
             &nbsp;{name}&nbsp;
           </MDTypography>
         </Link>
-        para una mejor web.
+        .
       </MDBox>
       <MDBox
         component="ul"

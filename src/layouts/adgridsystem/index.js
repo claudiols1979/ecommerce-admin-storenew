@@ -1,4 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+
+// @mui material components
+import Grid from "@mui/material/Grid";
+import Icon from "@mui/material/Icon";
+import TextField from "@mui/material/TextField";
+import MenuItem from "@mui/material/MenuItem";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -23,6 +29,9 @@ function AdGridSystem() {
   const [showForm, setShowForm] = useState(false);
   const [showReorder, setShowReorder] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
   useEffect(() => {
     fetchAllGridItems();
@@ -76,6 +85,29 @@ function AdGridSystem() {
     fetchAllGridItems().catch(() => {});
   };
 
+  // Filter and Pagination logic
+  const filteredItems = useMemo(() => {
+    if (!searchTerm) return gridItems;
+    const lowerSearch = searchTerm.toLowerCase();
+    return gridItems.filter(
+      (item) =>
+        item.title?.toLowerCase().includes(lowerSearch) ||
+        item.department?.toLowerCase().includes(lowerSearch)
+    );
+  }, [gridItems, searchTerm]);
+
+  const totalPages = Math.ceil(filteredItems.length / limit);
+  const startIndex = (page - 1) * limit;
+  const paginatedItems = useMemo(() => {
+    return filteredItems.slice(startIndex, startIndex + limit);
+  }, [filteredItems, startIndex, limit]);
+
+  const handlePageChange = (p) => setPage(p);
+  const handleLimitChange = (e) => {
+    setLimit(parseInt(e.target.value, 10));
+    setPage(1);
+  };
+
   return (
     <DashboardLayout>
       <DashboardNavbar />
@@ -98,6 +130,21 @@ function AdGridSystem() {
             </MDButton>
           </MDBox>
         </MDBox>
+
+        {!showForm && (
+          <MDBox mb={3}>
+            <TextField
+              label="Buscar item..."
+              variant="outlined"
+              fullWidth
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPage(1);
+              }}
+            />
+          </MDBox>
+        )}
 
         {error && (
           <MDBox
@@ -127,7 +174,65 @@ function AdGridSystem() {
             onSuccess={handleFormSuccess}
           />
         ) : (
-          <SlidesTable onEdit={handleEditItem} onReorder={handleReorder} />
+          <>
+            <SlidesTable
+              gridItems={paginatedItems}
+              loading={loading}
+              onEdit={handleEditItem}
+              onReorder={handleReorder}
+            />
+            <MDBox display="flex" justifyContent="center" alignItems="center" p={3}>
+              {totalPages > 1 && (
+                <MDPagination variant="gradient" color="info">
+                  <MDPagination
+                    item
+                    onClick={() => handlePageChange(page - 1)}
+                    disabled={page === 1}
+                  >
+                    <Icon sx={{ fontWeight: "bold" }}>chevron_left</Icon>
+                  </MDPagination>
+                  {[...Array(totalPages)].map((_, index) => {
+                    const pageNumber = index + 1;
+                    if (
+                      pageNumber === 1 ||
+                      pageNumber === totalPages ||
+                      (pageNumber >= page - 2 && pageNumber <= page + 2)
+                    ) {
+                      return (
+                        <MDPagination
+                          item
+                          key={pageNumber}
+                          active={pageNumber === page}
+                          onClick={() => handlePageChange(pageNumber)}
+                        >
+                          {pageNumber}
+                        </MDPagination>
+                      );
+                    } else if (pageNumber === page - 3 || pageNumber === page + 3) {
+                      return (
+                        <MDTypography key={pageNumber} variant="button" color="secondary" px={1}>
+                          ...
+                        </MDTypography>
+                      );
+                    }
+                    return null;
+                  })}
+                  <MDPagination
+                    item
+                    onClick={() => handlePageChange(page + 1)}
+                    disabled={page === totalPages}
+                  >
+                    <Icon sx={{ fontWeight: "bold" }}>chevron_right</Icon>
+                  </MDPagination>
+                </MDPagination>
+              )}
+            </MDBox>
+            <MDBox display="flex" justifyContent="space-between" alignItems="left" p={2}>
+              <MDTypography variant="caption" color="text">
+                {`Mostrando ${paginatedItems.length} de ${filteredItems.length} items`}
+              </MDTypography>
+            </MDBox>
+          </>
         )}
 
         {/* Reorder Dialog */}

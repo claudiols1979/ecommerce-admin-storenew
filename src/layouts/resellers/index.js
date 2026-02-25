@@ -12,6 +12,7 @@ import Icon from "@mui/material/Icon";
 import CircularProgress from "@mui/material/CircularProgress";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
+import MenuItem from "@mui/material/MenuItem";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -22,6 +23,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
+import MDPagination from "components/MDPagination";
 
 // Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
@@ -47,6 +49,8 @@ function Resellers() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredResellers, setFilteredResellers] = useState([]);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [resellerIdToDelete, setResellerIdToDelete] = useState(null);
 
@@ -141,10 +145,23 @@ function Resellers() {
   // Define columns for the DataTable - now directly from imported data
   const columns = useMemo(() => resellersTableColumns, []); // Use useMemo to prevent re-creation
 
+  // Paging logic
+  const totalPages = Math.ceil(filteredResellers.length / limit);
+  const startIndex = (page - 1) * limit;
+  const paginatedResellers = useMemo(() => {
+    return filteredResellers.slice(startIndex, startIndex + limit);
+  }, [filteredResellers, startIndex, limit]);
+
+  const handlePageChange = (p) => setPage(p);
+  const handleLimitChange = (e) => {
+    setLimit(parseInt(e.target.value, 10));
+    setPage(1);
+  };
+
   // Map filteredResellers to rows digestible by DataTable - now using imported function
   const rows = useMemo(() => {
     return resellersTableRows(
-      filteredResellers,
+      paginatedResellers,
       handleDeleteReseller,
       handleResetCode,
       toggleUserBlock,
@@ -152,7 +169,7 @@ function Resellers() {
       canDeleteResellers
     );
   }, [
-    filteredResellers,
+    paginatedResellers,
     handleDeleteReseller,
     handleResetCode,
     toggleUserBlock,
@@ -261,17 +278,77 @@ function Resellers() {
                     variant="outlined"
                     fullWidth
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setPage(1);
+                    }}
                   />
                 </MDBox>
 
                 <DataTable
                   table={{ columns, rows }}
                   isSorted={false}
-                  entriesPerPage={true}
-                  showTotalEntries={true}
+                  entriesPerPage={false}
+                  showTotalEntries={false}
                   noEndBorder
                 />
+
+                <MDBox display="flex" justifyContent="center" alignItems="center" p={3}>
+                  {totalPages > 1 && (
+                    <MDPagination variant="gradient" color="info">
+                      <MDPagination
+                        item
+                        onClick={() => handlePageChange(page - 1)}
+                        disabled={page === 1}
+                      >
+                        <Icon sx={{ fontWeight: "bold" }}>chevron_left</Icon>
+                      </MDPagination>
+                      {[...Array(totalPages)].map((_, index) => {
+                        const pageNumber = index + 1;
+                        if (
+                          pageNumber === 1 ||
+                          pageNumber === totalPages ||
+                          (pageNumber >= page - 2 && pageNumber <= page + 2)
+                        ) {
+                          return (
+                            <MDPagination
+                              item
+                              key={pageNumber}
+                              active={pageNumber === page}
+                              onClick={() => handlePageChange(pageNumber)}
+                            >
+                              {pageNumber}
+                            </MDPagination>
+                          );
+                        } else if (pageNumber === page - 3 || pageNumber === page + 3) {
+                          return (
+                            <MDTypography
+                              key={pageNumber}
+                              variant="button"
+                              color="secondary"
+                              px={1}
+                            >
+                              ...
+                            </MDTypography>
+                          );
+                        }
+                        return null;
+                      })}
+                      <MDPagination
+                        item
+                        onClick={() => handlePageChange(page + 1)}
+                        disabled={page === totalPages}
+                      >
+                        <Icon sx={{ fontWeight: "bold" }}>chevron_right</Icon>
+                      </MDPagination>
+                    </MDPagination>
+                  )}
+                </MDBox>
+                <MDBox display="flex" justifyContent="space-between" alignItems="left" p={2}>
+                  <MDTypography variant="caption" color="text">
+                    {`Mostrando ${paginatedResellers.length} de ${filteredResellers.length} clientes`}
+                  </MDTypography>
+                </MDBox>
               </MDBox>
             </Card>
           </Grid>

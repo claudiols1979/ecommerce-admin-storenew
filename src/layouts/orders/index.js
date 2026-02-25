@@ -28,6 +28,7 @@ import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
+import MDPagination from "components/MDPagination";
 
 // Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
@@ -254,21 +255,7 @@ function Orders() {
                         <MenuItem value="status_asc">Estado (A-Z)</MenuItem>
                       </TextField>
                     </Grid>
-                    <Grid item xs={12} sm={4} md={3}>
-                      <TextField
-                        select
-                        variant="outlined"
-                        fullWidth
-                        value={limit}
-                        onChange={handleLimitChange}
-                        label="Mostrar"
-                      >
-                        <MenuItem value={5}>5</MenuItem>
-                        <MenuItem value={10}>10</MenuItem>
-                        <MenuItem value={20}>20</MenuItem>
-                        <MenuItem value={50}>50</MenuItem>
-                      </TextField>
-                    </Grid>
+
                     <Grid item xs={12} sm={8} md={3}>
                       <MDBox display="flex" justifyContent="space-around" alignItems="center">
                         <FormControlLabel
@@ -313,12 +300,56 @@ function Orders() {
 
                 <MDBox display="flex" justifyContent="center" alignItems="center" p={3}>
                   {totalPages > 1 && (
-                    <Pagination
-                      count={totalPages}
-                      page={currentPage}
-                      onChange={handlePageChange}
-                      color="info"
-                    />
+                    <MDPagination variant="gradient" color="info">
+                      <MDPagination
+                        item
+                        onClick={() => handlePageChange(null, currentPage - 1)}
+                        disabled={currentPage === 1}
+                      >
+                        <Icon sx={{ fontWeight: "bold" }}>chevron_left</Icon>
+                      </MDPagination>
+                      {[...Array(totalPages)].map((_, index) => {
+                        const pageNumber = index + 1;
+                        if (
+                          pageNumber === 1 ||
+                          pageNumber === totalPages ||
+                          (pageNumber >= currentPage - 2 && pageNumber <= currentPage + 2)
+                        ) {
+                          return (
+                            <MDPagination
+                              item
+                              key={pageNumber}
+                              active={pageNumber === currentPage}
+                              onClick={() => handlePageChange(null, pageNumber)}
+                            >
+                              {pageNumber}
+                            </MDPagination>
+                          );
+                        } else if (
+                          pageNumber === currentPage - 3 ||
+                          pageNumber === currentPage + 3
+                        ) {
+                          return (
+                            <MDTypography
+                              key={pageNumber}
+                              variant="button"
+                              color="secondary"
+                              px={1}
+                            >
+                              ...
+                            </MDTypography>
+                          );
+                        }
+                        return null;
+                      })}
+                      <MDPagination
+                        item
+                        onClick={() => handlePageChange(null, currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                      >
+                        <Icon sx={{ fontWeight: "bold" }}>chevron_right</Icon>
+                      </MDPagination>
+                    </MDPagination>
                   )}
                 </MDBox>
                 <MDBox display="flex" justifyContent="space-between" alignItems="left" p={2}>

@@ -543,19 +543,27 @@ function OrderDetail() {
                 borderRadius="lg"
                 coloredShadow="info"
                 display="flex"
-                justifyContent="space-between"
+                flexDirection={{ xs: "column", sm: "row" }}
+                justifyContent={{ xs: "center", sm: "space-between" }}
                 alignItems="center"
+                textAlign={{ xs: "center", sm: "left" }}
               >
-                <MDTypography variant="h6" color="white">
+                <MDTypography variant="h6" color="white" mb={{ xs: 2, sm: 0 }}>
                   Detalles del Pedido: {order.orderNumber || order._id}
                 </MDTypography>
-                <MDBox display="flex" alignItems="center">
+                <MDBox
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  flexWrap="wrap"
+                  gap={1}
+                >
                   <MDButton
                     onClick={handlePrintLabel}
                     variant="gradient"
                     color="primary"
-                    sx={{ mr: 1 }}
                     startIcon={<LocalPrintshopIcon />}
+                    size="small"
                   >
                     Imprimir Etiqueta
                   </MDButton>
@@ -563,8 +571,8 @@ function OrderDetail() {
                     onClick={handlePrintSimplifiedTicket}
                     variant="gradient"
                     color="success"
-                    sx={{ mr: 1 }}
                     startIcon={<LocalPrintshopIcon />}
+                    size="small"
                   >
                     Imprimir Comprobante
                   </MDButton>
@@ -573,13 +581,18 @@ function OrderDetail() {
                       onClick={() => navigate(`/orders/edit/${order._id}`)}
                       variant="gradient"
                       color="warning"
-                      sx={{ mr: 1 }}
+                      size="small"
                     >
                       Ver Pedido
                     </MDButton>
                   )}
-                  <MDButton onClick={() => navigate("/orders")} variant="gradient" color="dark">
-                    Volver a todos los Pedidos
+                  <MDButton
+                    onClick={() => navigate("/orders")}
+                    variant="gradient"
+                    color="dark"
+                    size="small"
+                  >
+                    Volver
                   </MDButton>
                 </MDBox>
               </MDBox>

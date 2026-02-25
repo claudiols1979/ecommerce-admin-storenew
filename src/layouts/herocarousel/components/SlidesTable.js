@@ -102,7 +102,7 @@ function SlidesTable({ slides, loading, onEditSlide }) {
         table={{ columns, rows }}
         loading={loading}
         entriesPerPage={false}
-        showTotalEntries={true}
+        showTotalEntries={false}
         isSorted={true}
         noEndBorder
       />

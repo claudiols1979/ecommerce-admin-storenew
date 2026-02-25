@@ -13,8 +13,14 @@ import DataTable from "examples/Tables/DataTable";
 // Context
 import { useAdGrid } from "contexts/AdGridContext";
 
-function SlidesTable({ onEdit, onReorder }) {
-  const { gridItems, loading, deleteGridItem, toggleGridItemActive } = useAdGrid();
+function SlidesTable({ onEdit, onReorder, gridItems: propGridItems }) {
+  const {
+    gridItems: contextGridItems,
+    loading,
+    deleteGridItem,
+    toggleGridItemActive,
+  } = useAdGrid();
+  const gridItems = propGridItems || contextGridItems;
 
   const handleDelete = async (id) => {
     if (window.confirm("¿Estás seguro de que quieres eliminar este item?")) {
@@ -95,7 +101,7 @@ function SlidesTable({ onEdit, onReorder }) {
         table={{ columns, rows }}
         loading={loading}
         entriesPerPage={false}
-        showTotalEntries={true}
+        showTotalEntries={false}
         isSorted={true}
         noEndBorder
       />
@@ -106,6 +112,7 @@ function SlidesTable({ onEdit, onReorder }) {
 SlidesTable.propTypes = {
   onEdit: PropTypes.func.isRequired,
   onReorder: PropTypes.func,
+  gridItems: PropTypes.array,
 };
 
 export default SlidesTable;
