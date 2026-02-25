@@ -308,7 +308,9 @@ function OrderDetail() {
     );
   }
 
-  const isEditable = ["pending", "placed", "processing"].includes(order.status);
+  const isEditable = ["placed", "processing", "shipped", "cancelled", "delivered"].includes(
+    order.status
+  );
   // Assuming 'approvedBy' exists on the order if an admin/editor has processed it
   const approvedByAdmin = order.approvedBy
     ? `${order.approvedBy.firstName} ${order.approvedBy.lastName}`

@@ -46,7 +46,7 @@ const statusTranslations = {
 };
 
 const canModifyOrderItemsStatuses = ["pending", "placed", "processing"];
-const canChangeOrderStatusDropdown = ["placed", "processing", "shipped"];
+const canChangeOrderStatusDropdown = ["placed", "processing", "shipped", "cancelled", "delivered"];
 
 function EditOrder() {
   const GAM_CANTONS = {

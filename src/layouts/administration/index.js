@@ -14,6 +14,7 @@ import { toast } from "react-toastify";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
+import MDInput from "components/MDInput";
 
 // Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
@@ -24,12 +25,25 @@ import Footer from "examples/Footer";
 import { useConfig } from "contexts/ConfigContext";
 
 function Administration() {
-  const { taxRegime, updateConfig, loading, systemEnv, envLoading } = useConfig();
+  const { configs, updateConfig, loading, systemEnv, envLoading } = useConfig();
   const [isUpdating, setIsUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
+  const [bannerMessage, setBannerMessage] = useState(configs.PROMOTION_BANNER_MESSAGE || "");
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
+  };
+
+  const handleSaveBanner = async () => {
+    setIsUpdating(true);
+    try {
+      await updateConfig("PROMOTION_BANNER_MESSAGE", bannerMessage);
+      toast.success("Mensaje del banner actualizado con éxito.");
+    } catch (error) {
+      toast.error("Error al actualizar el mensaje del banner.");
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handleRegimeChange = async (event) => {
@@ -75,8 +89,9 @@ function Administration() {
                   centered
                   sx={{ mb: 3, borderBottom: "1px solid #ddd" }}
                 >
-                  <Tab label="Configuración Fiscal" />
-                  <Tab label="Información del Sistema" />
+                  <Tab label="Fiscal" />
+                  <Tab label="Marketing" />
+                  <Tab label="Sistema" />
                 </Tabs>
 
                 {activeTab === 0 ? (
@@ -96,7 +111,7 @@ function Administration() {
                             Régimen Fiscal Activo
                           </MDTypography>
                           <MDTypography variant="caption" color="text" display="block">
-                            {taxRegime === "simplified"
+                            {configs.TAX_REGIME === "simplified"
                               ? "Actualmente en Régimen Simplificado (0% IVA, Envío con impuesto incluido)."
                               : "Actualmente en Régimen Tradicional (13% IVA desglosado)."}
                           </MDTypography>
@@ -104,7 +119,7 @@ function Administration() {
                         <FormControlLabel
                           control={
                             <Switch
-                              checked={taxRegime === "simplified"}
+                              checked={configs.TAX_REGIME === "simplified"}
                               onChange={handleRegimeChange}
                               disabled={isUpdating || loading}
                               color="info"
@@ -112,7 +127,7 @@ function Administration() {
                           }
                           label={
                             <MDTypography variant="button" fontWeight="medium" color="text">
-                              {taxRegime === "simplified" ? "Simplificado" : "Tradicional"}
+                              {configs.TAX_REGIME === "simplified" ? "Simplificado" : "Tradicional"}
                             </MDTypography>
                           }
                         />
@@ -123,8 +138,7 @@ function Administration() {
                           ¿Qué cambia con el Régimen Simplificado?
                         </MDTypography>
                         <MDTypography variant="body2" color="text">
-                          1. <strong>IVA 0%:</strong> Todos los productos y servicios tendrán un 0%
-                          de IVA.
+                          1. <strong>IVA 0%:</strong> Todos los productos tendrán un 0% de IVA.
                         </MDTypography>
                         <MDTypography variant="body2" color="text">
                           2. <strong>Envío Flat:</strong> El costo de envío incluirá el impuesto
@@ -139,6 +153,39 @@ function Administration() {
                           interno para el cliente con la leyenda legal correspondiente.
                         </MDTypography>
                       </MDBox>
+                    </MDBox>
+                  </MDBox>
+                ) : activeTab === 1 ? (
+                  <MDBox>
+                    <MDTypography variant="h6" mb={2}>
+                      Configuración de Marketing
+                    </MDTypography>
+                    <MDBox mb={2}>
+                      <MDTypography variant="button" fontWeight="bold" mb={1} display="block">
+                        Mensaje del Banner de Promoción
+                      </MDTypography>
+                      <MDInput
+                        fullWidth
+                        multiline
+                        rows={2}
+                        value={bannerMessage}
+                        onChange={(e) => setBannerMessage(e.target.value)}
+                        placeholder="Escribe el mensaje que aparecerá en el banner superior..."
+                      />
+                    </MDBox>
+                    <MDBox mt={3} display="flex" justifyContent="flex-end">
+                      <MDButton
+                        variant="gradient"
+                        color="info"
+                        onClick={handleSaveBanner}
+                        disabled={isUpdating}
+                      >
+                        {isUpdating ? (
+                          <CircularProgress size={20} color="inherit" />
+                        ) : (
+                          "Guardar Mensaje"
+                        )}
+                      </MDButton>
                     </MDBox>
                   </MDBox>
                 ) : (
