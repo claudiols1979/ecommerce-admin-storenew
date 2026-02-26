@@ -516,7 +516,8 @@ function ProductDetail() {
                         <MDBox
                           p={2}
                           borderRadius="lg"
-                          bgcolor={userResellerCategory === cat ? "info.main" : "grey.100"}
+                          variant={userResellerCategory === cat ? "gradient" : "contained"}
+                          bgColor={userResellerCategory === cat ? "info" : "grey-100"}
                           textAlign="center"
                           sx={{ transition: "all 0.2s" }}
                         >

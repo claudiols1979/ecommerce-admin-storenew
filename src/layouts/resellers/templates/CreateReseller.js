@@ -8,9 +8,6 @@ import { toast } from "react-toastify";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
 import TextField from "@mui/material/TextField";
-import FormControl from "@mui/material/FormControl";
-import InputLabel from "@mui/material/InputLabel";
-import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import CircularProgress from "@mui/material/CircularProgress"; // For loading spinner on button
 import Box from "@mui/material/Box"; // For loading spinner container
@@ -218,25 +215,24 @@ function CreateReseller() {
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth variant="outlined" required>
-                      <InputLabel id="reseller-category-label">Categoría de Revendedor</InputLabel>
-                      <Select
-                        labelId="reseller-category-label"
-                        id="reseller-category"
-                        value={resellerCategory}
-                        onChange={(e) => setResellerCategory(e.target.value)}
-                        label="Categoría de Revendedor"
-                      >
-                        <MenuItem value="">
-                          <em>-- Selecciona una Categoría --</em>
+                    <TextField
+                      select
+                      fullWidth
+                      label="Categoría de Revendedor"
+                      value={resellerCategory}
+                      onChange={(e) => setResellerCategory(e.target.value)}
+                      variant="outlined"
+                      required
+                    >
+                      <MenuItem value="">
+                        <em>-- Selecciona una Categoría --</em>
+                      </MenuItem>
+                      {resellerCategories.map((category, index) => (
+                        <MenuItem key={category} value={category}>
+                          Nivel {index + 1}
                         </MenuItem>
-                        {resellerCategories.map((category, index) => (
-                          <MenuItem key={category} value={category}>
-                            Nivel {index + 1}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                      ))}
+                    </TextField>
                   </Grid>
                 </Grid>
                 <MDBox mt={4} mb={1} display="flex" justifyContent="flex-end">
