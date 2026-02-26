@@ -482,12 +482,14 @@ function OrderDetail() {
                 total
               )}</div>
               <div style="margin-top: 10px; font-size: 14px; color: #666;">
-                <div>Subtotal Productos: ${formatCurrency(itemsSubtotal)}</div>
+                <div>${
+                  isSimplified ? "Subtotal Productos:" : "Subtotal Productos (Sin IVA):"
+                } ${formatCurrency(itemsSubtotal)}</div>
                 ${
                   !isSimplified
                     ? `
                     <div>IVA Productos (13%): ${formatCurrency(itemsTax)}</div>
-                    <div>Envío: ${formatCurrency(shippingBase)}</div>
+                    <div>Envío (Sin IVA): ${formatCurrency(shippingBase)}</div>
                     <div>IVA Envío (13%): ${formatCurrency(shippingTax)}</div>
                   `
                     : `
@@ -628,7 +630,9 @@ function OrderDetail() {
                         Desglose de Pago:
                       </MDTypography>
                       <MDTypography variant="body2" color="text" mb={0.5}>
-                        Subtotal Productos:{" "}
+                        {order?.taxRegime === "simplified"
+                          ? "Subtotal Productos:"
+                          : "Subtotal Productos (Sin IVA):"}{" "}
                         {Math.round(displayBreakdown.itemsSubtotal).toLocaleString("es-CR", {
                           style: "currency",
                           currency: "CRC",
@@ -648,7 +652,9 @@ function OrderDetail() {
                         </MDTypography>
                       )}
                       <MDTypography variant="body2" color="text" mb={0.5}>
-                        Envío (Correos de CR):{" "}
+                        {order?.taxRegime === "simplified"
+                          ? "Envío (Correos de CR):"
+                          : "Envío (Sin IVA):"}{" "}
                         {Math.round(displayBreakdown.shippingBase).toLocaleString("es-CR", {
                           style: "currency",
                           currency: "CRC",
