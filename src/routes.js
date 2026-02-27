@@ -21,6 +21,7 @@ import HeroCarousel from "layouts/herocarousel";
 import AdGridSystem from "layouts/adgridsystem";
 import HeroVideoCarousel from "layouts/herovideocarousel";
 import Resellers from "layouts/resellers";
+import ChatAnalytics from "layouts/chat-analytics";
 import Administration from "layouts/administration";
 import SignIn from "layouts/authentication/sign-in";
 import SignUp from "layouts/authentication/sign-up";
@@ -180,6 +181,15 @@ const routes = [
     component: <Profile />,
     // Roles with double quotes
     allowedRoles: ["Administrador", "Editor", "Revendedor"], // All authenticated users
+  },
+  {
+    type: "collapse",
+    name: "Asistente AI",
+    key: "chat-analytics",
+    icon: <Icon fontSize="small">smart_toy</Icon>,
+    route: "/chat-analytics",
+    component: <ChatAnalytics />,
+    allowedRoles: ["Administrador", "Editor"],
   },
   {
     type: "collapse",

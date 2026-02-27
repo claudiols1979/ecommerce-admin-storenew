@@ -16,6 +16,8 @@ import {
   InputAdornment,
   IconButton,
 } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import SearchIcon from "@mui/icons-material/Search";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -294,10 +296,10 @@ function Resellers() {
                         <InputAdornment position="end">
                           {searchTerm && (
                             <IconButton onClick={handleClearSearch} size="small" sx={{ mr: 1 }}>
-                              <Icon sx={{ color: darkMode ? "#ffffff !important" : "inherit" }}>close</Icon>
+                              <CloseIcon sx={{ color: darkMode ? "#ffffff !important" : "inherit" }} />
                             </IconButton>
                           )}
-                          <Icon sx={{ color: darkMode ? "#ffffff !important" : "inherit" }}>search</Icon>
+                          <SearchIcon sx={{ color: darkMode ? "#ffffff !important" : "inherit" }} />
                         </InputAdornment>
                       ),
                     }}

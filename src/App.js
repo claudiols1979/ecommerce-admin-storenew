@@ -72,6 +72,7 @@ import EditReseller from "layouts/resellers/templates/EditReseller";
 import ResellerDetail from "layouts/resellers/templates/ResellerDetail";
 import Profile from "layouts/profile";
 import Administration from "layouts/administration";
+import ChatAnalytics from "layouts/chat-analytics";
 
 // Variantes
 import Variants from "layouts/variants";
@@ -360,6 +361,14 @@ function MainAppContent() {
                   element={
                     <ProtectedRoute allowedRoles={["Administrador"]}>
                       <Administration />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/chat-analytics"
+                  element={
+                    <ProtectedRoute allowedRoles={["Administrador", "Editor"]}>
+                      <ChatAnalytics />
                     </ProtectedRoute>
                   }
                 />
