@@ -3,25 +3,26 @@ import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 
 // @mui material components
-import Grid from "@mui/material/Grid";
-import Card from "@mui/material/Card";
-import Icon from "@mui/material/Icon";
-import CircularProgress from "@mui/material/CircularProgress";
-import Box from "@mui/material/Box";
-import Pagination from "@mui/material/Pagination";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
-import InputLabel from "@mui/material/InputLabel";
-import FormControl from "@mui/material/FormControl";
-import TextField from "@mui/material/TextField";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Switch from "@mui/material/Switch";
-import InputAdornment from "@mui/material/InputAdornment";
-import IconButton from "@mui/material/IconButton";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
+import {
+  Grid,
+  Card,
+  Icon,
+  CircularProgress,
+  Box,
+  Pagination,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
+  FormControlLabel,
+  Switch,
+  InputAdornment,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 
 // Material Dashboard 2 React components
@@ -29,6 +30,7 @@ import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
 import MDPagination from "components/MDPagination";
+import MDInput from "components/MDInput";
 
 // Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
@@ -40,9 +42,12 @@ import ordersTableData from "./data/ordersTableData";
 // Contexts
 import { useAuth } from "contexts/AuthContext";
 import { useOrders } from "contexts/OrderContext";
+import { useMaterialUIController } from "context";
 
 function Orders() {
   const { user } = useAuth();
+  const [controller] = useMaterialUIController();
+  const { darkMode } = controller;
   const {
     orders,
     loading,
@@ -60,6 +65,7 @@ function Orders() {
   const [limit, setLimit] = useState(10);
   const [sort, setSort] = useState("createdAt_desc");
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState(""); // Immediate input state
   const [showPending, setShowPending] = useState(() => {
     return localStorage.getItem("orders-show-pending") === "true";
   });
@@ -76,6 +82,18 @@ function Orders() {
   useEffect(() => {
     localStorage.setItem("orders-show-pending", showPending);
   }, [showPending]);
+
+  // Debounce search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearchTerm(searchInput);
+      if (searchInput !== searchTerm) {
+        setPage(1);
+      }
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchInput, searchTerm]);
 
   useEffect(() => {
     fetchOrders(page, limit, sort, searchTerm, !showPending);
@@ -103,20 +121,27 @@ function Orders() {
   };
 
   const handleSearchInputChange = (event) => {
-    setSearchTerm(event.target.value);
+    setSearchInput(event.target.value);
   };
 
   const handleSearch = useCallback(() => {
     if (page !== 1) {
       setPage(1);
     }
-    fetchOrders(1, limit, sort, searchTerm, !showPending);
-  }, [limit, sort, searchTerm, fetchOrders, page, showPending]);
+    fetchOrders(1, limit, sort, searchInput, !showPending);
+  }, [limit, sort, searchInput, fetchOrders, page, showPending]);
 
   const handleKeyPress = (event) => {
     if (event.key === "Enter") {
       handleSearch();
     }
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput("");
+    setSearchTerm("");
+    setPage(1);
+    fetchOrders(1, limit, sort, "", !showPending);
   };
 
   const handleTogglePending = (event) => {
@@ -221,18 +246,27 @@ function Orders() {
                 <MDBox px={3} mb={3}>
                   <Grid container spacing={2} alignItems="center">
                     <Grid item xs={12} md={6}>
-                      <TextField
+                      <MDInput
                         label="Buscar Pedido"
                         variant="outlined"
-                        value={searchTerm}
+                        value={searchInput}
                         onChange={handleSearchInputChange}
                         onKeyPress={handleKeyPress}
                         fullWidth
                         InputProps={{
                           endAdornment: (
                             <InputAdornment position="end">
+                              {searchInput && (
+                                <IconButton onClick={handleClearSearch} size="small" sx={{ mr: 1 }}>
+                                  <Icon sx={{ color: darkMode ? "#ffffff !important" : "inherit" }}>
+                                    close
+                                  </Icon>
+                                </IconButton>
+                              )}
                               <IconButton onClick={handleSearch} edge="end">
-                                <Icon>search</Icon>
+                                <Icon sx={{ color: darkMode ? "#ffffff !important" : "inherit" }}>
+                                  search
+                                </Icon>
                               </IconButton>
                             </InputAdornment>
                           ),
@@ -240,7 +274,7 @@ function Orders() {
                       />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <TextField
+                      <MDInput
                         select
                         variant="outlined"
                         fullWidth
@@ -253,7 +287,7 @@ function Orders() {
                         <MenuItem value="totalPrice_desc">Total (Mayor a Menor)</MenuItem>
                         <MenuItem value="totalPrice_asc">Total (Menor a Mayor)</MenuItem>
                         <MenuItem value="status_asc">Estado (A-Z)</MenuItem>
-                      </TextField>
+                      </MDInput>
                     </Grid>
 
                     <Grid item xs={12} sm={8} md={3}>
@@ -375,7 +409,7 @@ function Orders() {
             </MDTypography>
             <Grid container spacing={3}>
               <Grid item xs={12} sm={6}>
-                <TextField
+                <MDInput
                   label="Fecha Inicio"
                   type="date"
                   fullWidth
@@ -385,7 +419,7 @@ function Orders() {
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField
+                <MDInput
                   label="Fecha Fin"
                   type="date"
                   fullWidth

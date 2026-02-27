@@ -6,6 +6,7 @@ import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDAvatar from "components/MDAvatar";
 import MDButton from "components/MDButton";
+import MDConfirmationModal from "components/MDConfirmationModal";
 
 // Material Dashboard 2 React examples
 import DataTable from "examples/Tables/DataTable";
@@ -21,15 +22,30 @@ function SlidesTable({ onEdit, onReorder, gridItems: propGridItems }) {
     toggleGridItemActive,
   } = useAdGrid();
   const gridItems = propGridItems || contextGridItems;
+  const [openDeleteModal, setOpenDeleteModal] = React.useState(false);
+  const [itemToDelete, setItemToDelete] = React.useState(null);
 
-  const handleDelete = async (id) => {
-    if (window.confirm("¿Estás seguro de que quieres eliminar este item?")) {
+  const handleDeleteClick = (id) => {
+    setItemToDelete(id);
+    setOpenDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (itemToDelete) {
       try {
-        await deleteGridItem(id);
+        await deleteGridItem(itemToDelete);
       } catch (error) {
         console.error("Error deleting item:", error);
+      } finally {
+        setOpenDeleteModal(false);
+        setItemToDelete(null);
       }
     }
+  };
+
+  const handleCloseDeleteModal = () => {
+    setOpenDeleteModal(false);
+    setItemToDelete(null);
   };
 
   const handleToggleActive = async (id, isActive) => {
@@ -87,7 +103,7 @@ function SlidesTable({ onEdit, onReorder, gridItems: propGridItems }) {
           variant="gradient"
           color="error"
           size="small"
-          onClick={() => handleDelete(item._id)}
+          onClick={() => handleDeleteClick(item._id)}
         >
           Eliminar
         </MDButton>
@@ -104,6 +120,15 @@ function SlidesTable({ onEdit, onReorder, gridItems: propGridItems }) {
         showTotalEntries={false}
         isSorted={true}
         noEndBorder
+      />
+      <MDConfirmationModal
+        open={openDeleteModal}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        title="Confirmar Eliminación"
+        content="¿Estás seguro de que quieres eliminar este item? Esta acción no se puede deshacer."
+        confirmText="Eliminar"
+        loading={loading}
       />
     </MDBox>
   );

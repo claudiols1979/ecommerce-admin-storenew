@@ -6,24 +6,23 @@ import { toast } from "react-toastify";
 // No longer need PropTypes import here as it's handled in data file now
 
 // @mui material components
-import Grid from "@mui/material/Grid";
-import Card from "@mui/material/Card";
-import Icon from "@mui/material/Icon";
-import CircularProgress from "@mui/material/CircularProgress";
-import Box from "@mui/material/Box";
-import TextField from "@mui/material/TextField";
-import MenuItem from "@mui/material/MenuItem";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
+import {
+  Grid,
+  Card,
+  Icon,
+  CircularProgress,
+  Box,
+  MenuItem,
+  InputAdornment,
+  IconButton,
+} from "@mui/material";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
 import MDPagination from "components/MDPagination";
+import MDInput from "components/MDInput";
 
 // Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
@@ -33,10 +32,12 @@ import DataTable from "examples/Tables/DataTable";
 
 // Custom components
 import MDAlert from "components/MDAlert";
+import MDConfirmationModal from "components/MDConfirmationModal";
 
 // Contexts
 import { useResellers } from "contexts/ResellerContext";
 import { useAuth } from "contexts/AuthContext";
+import { useMaterialUIController } from "context";
 
 // Data for resellers table
 import { resellersTableColumns, resellersTableRows } from "./data/resellersTableData";
@@ -46,6 +47,8 @@ function Resellers() {
   const { resellers, loading, error, deleteReseller, resetResellerCode, toggleUserBlock } =
     useResellers();
   const { user } = useAuth();
+  const [controller] = useMaterialUIController();
+  const { darkMode } = controller;
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredResellers, setFilteredResellers] = useState([]);
@@ -59,6 +62,11 @@ function Resellers() {
   const isEditor = user?.role === "Editor";
   const canManageResellers = isAdmin || isEditor; // Can edit, view, reset code
   const canDeleteResellers = isAdmin; // Only Admin can delete
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setPage(1);
+  };
 
   // Effect to filter resellers based on search term
   useEffect(() => {
@@ -271,9 +279,8 @@ function Resellers() {
                 </MDTypography>
               </MDBox>
               <MDBox p={3}>
-                {/* Search Input */}
                 <MDBox mb={3}>
-                  <TextField
+                  <MDInput
                     label="Buscar cliente por nombre, correo, código, etc."
                     variant="outlined"
                     fullWidth
@@ -281,6 +288,18 @@ function Resellers() {
                     onChange={(e) => {
                       setSearchTerm(e.target.value);
                       setPage(1);
+                    }}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          {searchTerm && (
+                            <IconButton onClick={handleClearSearch} size="small" sx={{ mr: 1 }}>
+                              <Icon sx={{ color: darkMode ? "#ffffff !important" : "inherit" }}>close</Icon>
+                            </IconButton>
+                          )}
+                          <Icon sx={{ color: darkMode ? "#ffffff !important" : "inherit" }}>search</Icon>
+                        </InputAdornment>
+                      ),
                     }}
                   />
                 </MDBox>
@@ -356,63 +375,15 @@ function Resellers() {
       </MDBox>
       <Footer />
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog
+      <MDConfirmationModal
         open={openDeleteDialog}
         onClose={handleCloseDeleteDialog}
-        aria-labelledby="delete-dialog-title"
-        aria-describedby="delete-dialog-description"
-        PaperProps={{
-          sx: (theme) => ({
-            backgroundColor:
-              theme.palette.mode === "dark" ? "#1A2027" : theme.palette.background.paper,
-            color: theme.palette.mode === "dark" ? "#E0E0E0" : theme.palette.text.primary,
-          }),
-        }}
-      >
-        <DialogTitle id="delete-dialog-title">
-          <MDTypography
-            variant="h6"
-            color={(theme) =>
-              theme.palette.mode === "dark" ? "#E0E0E0" : theme.palette.text.primary
-            }
-          >
-            {"Confirmar Eliminación"}
-          </MDTypography>
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText id="delete-dialog-description">
-            <MDTypography
-              variant="body2"
-              color={(theme) =>
-                theme.palette.mode === "dark" ? "#E0E0E0" : theme.palette.text.primary
-              }
-            >
-              ¿Estás seguro de que quieres eliminar este revendedor? Esta acción no se puede
-              deshacer.
-            </MDTypography>
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <MDButton
-            onClick={handleCloseDeleteDialog}
-            color="dark"
-            variant="text"
-            disabled={loading}
-          >
-            Cancelar
-          </MDButton>
-          <MDButton
-            onClick={handleConfirmDelete}
-            color="error"
-            variant="gradient"
-            autoFocus
-            disabled={loading}
-          >
-            Eliminar
-          </MDButton>
-        </DialogActions>
-      </Dialog>
+        onConfirm={handleConfirmDelete}
+        title="Confirmar Eliminación"
+        content="¿Estás seguro de que quieres eliminar este revendedor? Esta acción no se puede deshacer."
+        confirmText="Eliminar"
+        loading={loading}
+      />
     </DashboardLayout>
   );
 }

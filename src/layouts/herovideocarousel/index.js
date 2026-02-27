@@ -12,15 +12,12 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 
 // Material UI components
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
+// (None needed)
 
 // Hero Video Carousel components
 import VideosTable from "layouts/herovideocarousel/components/VideosTable";
 import VideoForm from "layouts/herovideocarousel/components/VideoForm";
+import MDConfirmationModal from "components/MDConfirmationModal";
 
 // Context
 import { useVideo } from "contexts/VideoContext";
@@ -135,29 +132,15 @@ function HeroVideoCarousel() {
           />
         )}
 
-        {/* Dialog de confirmación para eliminar */}
-        <Dialog
+        <MDConfirmationModal
           open={deleteDialog.open}
           onClose={handleCloseDeleteDialog}
-          aria-labelledby="alert-dialog-title"
-          aria-describedby="alert-dialog-description"
-        >
-          <DialogTitle id="alert-dialog-title">Confirmar Eliminación</DialogTitle>
-          <DialogContent>
-            <DialogContentText id="alert-dialog-description">
-              ¿Estás seguro de que quieres eliminar el video &quot;{deleteDialog.videoTitle}&quot;?
-              Esta acción no se puede deshacer.
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <MDButton onClick={handleCloseDeleteDialog} color="secondary">
-              Cancelar
-            </MDButton>
-            <MDButton onClick={handleConfirmDelete} color="error" autoFocus>
-              Eliminar
-            </MDButton>
-          </DialogActions>
-        </Dialog>
+          onConfirm={handleConfirmDelete}
+          title="Confirmar Eliminación"
+          content={`¿Estás seguro de que quieres eliminar el video "${deleteDialog.videoTitle}"? Esta acción no se puede deshacer.`}
+          confirmText="Eliminar"
+          loading={loading}
+        />
       </MDBox>
       <Footer />
     </DashboardLayout>

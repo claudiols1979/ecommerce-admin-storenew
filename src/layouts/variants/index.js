@@ -9,11 +9,11 @@ import IconButton from "@mui/material/IconButton";
 import Divider from "@mui/material/Divider";
 import Chip from "@mui/material/Chip";
 import Collapse from "@mui/material/Collapse";
+import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
-import CircularProgress from "@mui/material/CircularProgress";
 
 // @mui icons
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -36,6 +36,7 @@ import Footer from "examples/Footer";
 // Contexts
 import { useVariants } from "contexts/VariantContext";
 import { useMaterialUIController } from "context";
+import MDConfirmationModal from "components/MDConfirmationModal";
 
 function Variants() {
   const {
@@ -491,30 +492,15 @@ function Variants() {
         </DialogActions>
       </Dialog>
 
-      {/* Dialog para confirmar eliminación */}
-      <Dialog
+      <MDConfirmationModal
         open={deleteDialog.open}
         onClose={() => setDeleteDialog({ ...deleteDialog, open: false })}
-      >
-        <DialogTitle>Confirmar Eliminación</DialogTitle>
-        <DialogContent>
-          <MDTypography variant="body2">
-            ¿Estás seguro de eliminar el atributo &quot;{deleteDialog.name}&quot; y todos sus
-            valores?
-          </MDTypography>
-        </DialogContent>
-        <DialogActions>
-          <MDButton
-            color="secondary"
-            onClick={() => setDeleteDialog({ ...deleteDialog, open: false })}
-          >
-            Cancelar
-          </MDButton>
-          <MDButton color="error" onClick={handleDeleteConfirm}>
-            Eliminar
-          </MDButton>
-        </DialogActions>
-      </Dialog>
+        onConfirm={handleDeleteConfirm}
+        title="Confirmar Eliminación"
+        content={`¿Estás seguro de eliminar el atributo "${deleteDialog.name}" y todos sus valores?`}
+        confirmText="Eliminar"
+        loading={loading}
+      />
 
       <Footer />
     </DashboardLayout>

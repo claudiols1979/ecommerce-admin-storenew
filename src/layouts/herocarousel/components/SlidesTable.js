@@ -5,6 +5,7 @@ import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDAvatar from "components/MDAvatar";
 import MDButton from "components/MDButton";
+import MDConfirmationModal from "components/MDConfirmationModal";
 
 // Material Dashboard 2 React examples
 import DataTable from "examples/Tables/DataTable";
@@ -14,15 +15,30 @@ import { useHeroCarousel } from "contexts/HeroCarouselContext";
 
 function SlidesTable({ slides, loading, onEditSlide }) {
   const { deleteSlide, toggleSlideActive } = useHeroCarousel();
+  const [openDeleteModal, setOpenDeleteModal] = React.useState(false);
+  const [slideToDelete, setSlideToDelete] = React.useState(null);
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this slide?")) {
+  const handleDeleteClick = (id) => {
+    setSlideToDelete(id);
+    setOpenDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (slideToDelete) {
       try {
-        await deleteSlide(id);
+        await deleteSlide(slideToDelete);
       } catch (error) {
         // Error handled by context
+      } finally {
+        setOpenDeleteModal(false);
+        setSlideToDelete(null);
       }
     }
+  };
+
+  const handleCloseDeleteModal = () => {
+    setOpenDeleteModal(false);
+    setSlideToDelete(null);
   };
 
   const handleToggleActive = async (id, isActive) => {
@@ -88,7 +104,7 @@ function SlidesTable({ slides, loading, onEditSlide }) {
           variant="gradient"
           color="error"
           size="small"
-          onClick={() => handleDelete(slide._id)}
+          onClick={() => handleDeleteClick(slide._id)}
         >
           Eliminar
         </MDButton>
@@ -105,6 +121,15 @@ function SlidesTable({ slides, loading, onEditSlide }) {
         showTotalEntries={false}
         isSorted={true}
         noEndBorder
+      />
+      <MDConfirmationModal
+        open={openDeleteModal}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        title="Confirmar Eliminación"
+        content="¿Estás seguro de que quieres eliminar esta diapositiva? Esta acción no se puede deshacer."
+        confirmText="Eliminar"
+        loading={loading}
       />
     </MDBox>
   );

@@ -5,22 +5,18 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 // @mui material components
-import Grid from "@mui/material/Grid";
-import Card from "@mui/material/Card";
-import CircularProgress from "@mui/material/CircularProgress";
-import Box from "@mui/material/Box";
-import TextField from "@mui/material/TextField";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
-import Pagination from "@mui/material/Pagination";
-import MenuItem from "@mui/material/MenuItem";
-import Icon from "@mui/material/Icon";
-import InputAdornment from "@mui/material/InputAdornment";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
+import {
+  Grid,
+  Card,
+  CircularProgress,
+  Box,
+  Pagination,
+  MenuItem,
+  Icon,
+  InputAdornment,
+  IconButton,
+  Tooltip,
+} from "@mui/material";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -28,6 +24,7 @@ import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
 import MDProgress from "components/MDProgress";
 import MDPagination from "components/MDPagination";
+import MDInput from "components/MDInput";
 
 // Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
@@ -37,10 +34,12 @@ import DataTable from "examples/Tables/DataTable";
 
 // Custom components (from your project)
 import MDAlert from "components/MDAlert";
+import MDConfirmationModal from "components/MDConfirmationModal";
 
 // Contexts
 import { useProducts } from "contexts/ProductContext";
 import { useAuth } from "contexts/AuthContext";
+import { useMaterialUIController } from "context";
 
 function Products() {
   const navigate = useNavigate();
@@ -60,6 +59,8 @@ function Products() {
     getProducts,
   } = useProducts();
   const { user } = useAuth();
+  const [controller] = useMaterialUIController();
+  const { darkMode } = controller;
 
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [productIdToDelete, setProductIdToDelete] = useState(null);
@@ -91,6 +92,12 @@ function Products() {
     if (event.key === "Enter") {
       handleSearch();
     }
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setPage(1);
+    getProducts("");
   };
 
   // --- EXISTING HANDLERS (UNCHANGED) ---
@@ -394,8 +401,8 @@ function Products() {
               </MDBox>
               <MDBox p={3}>
                 <MDBox mb={3}>
-                  {/* --- CORRECTED TEXTFIELD --- */}
-                  <TextField
+                  {/* --- CORRECTED MDINPUT --- */}
+                  <MDInput
                     label="Buscar por nombre, código o marca"
                     variant="outlined"
                     fullWidth
@@ -406,8 +413,13 @@ function Products() {
                       placeholder: "Ej: Perfume Eros, Cód: PERF001, Marca: Versace",
                       endAdornment: (
                         <InputAdornment position="end">
+                          {searchTerm && (
+                            <IconButton onClick={handleClearSearch} size="small" sx={{ mr: 1 }}>
+                              <Icon sx={{ color: darkMode ? "#ffffff !important" : "inherit" }}>close</Icon>
+                            </IconButton>
+                          )}
                           <IconButton onClick={handleSearch} edge="end">
-                            <Icon>search</Icon>
+                            <Icon sx={{ color: darkMode ? "#ffffff !important" : "inherit" }}>search</Icon>
                           </IconButton>
                         </InputAdornment>
                       ),
@@ -486,61 +498,15 @@ function Products() {
       </MDBox>
       <Footer />
 
-      <Dialog
+      <MDConfirmationModal
         open={openDeleteDialog}
         onClose={handleCloseDeleteDialog}
-        aria-labelledby="delete-dialog-title"
-        aria-describedby="delete-dialog-description"
-        PaperProps={{
-          sx: (theme) => ({
-            backgroundColor:
-              theme.palette.mode === "dark" ? "#1A2027" : theme.palette.background.paper,
-            color: theme.palette.mode === "dark" ? "#E0E0E0" : theme.palette.text.primary,
-          }),
-        }}
-      >
-        <DialogTitle id="delete-dialog-title">
-          <MDTypography
-            variant="h6"
-            color={(theme) =>
-              theme.palette.mode === "dark" ? "#E0E0E0" : theme.palette.text.primary
-            }
-          >
-            {"Confirmar Eliminación"}
-          </MDTypography>
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText id="delete-dialog-description">
-            <MDTypography
-              variant="body2"
-              color={(theme) =>
-                theme.palette.mode === "dark" ? "#E0E0E0" : theme.palette.text.primary
-              }
-            >
-              ¿Estás seguro de que quieres eliminar este producto? Esta acción no se puede deshacer.
-            </MDTypography>
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <MDButton
-            onClick={handleCloseDeleteDialog}
-            color="dark"
-            variant="text"
-            disabled={loading}
-          >
-            Cancelar
-          </MDButton>
-          <MDButton
-            onClick={handleConfirmDelete}
-            color="error"
-            variant="gradient"
-            autoFocus
-            disabled={loading}
-          >
-            Eliminar
-          </MDButton>
-        </DialogActions>
-      </Dialog>
+        onConfirm={handleConfirmDelete}
+        title="Confirmar Eliminación"
+        content="¿Estás seguro de que quieres eliminar este producto? Esta acción no se puede deshacer."
+        confirmText="Eliminar"
+        loading={loading}
+      />
     </DashboardLayout>
   );
 }

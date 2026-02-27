@@ -1,16 +1,14 @@
 import React, { useState, useEffect, useMemo } from "react";
 
 // @mui material components
-import Grid from "@mui/material/Grid";
-import Icon from "@mui/material/Icon";
-import TextField from "@mui/material/TextField";
-import MenuItem from "@mui/material/MenuItem";
+import { Grid, Icon, MenuItem, InputAdornment, IconButton } from "@mui/material";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
 import MDPagination from "components/MDPagination";
+import MDInput from "components/MDInput";
 
 // Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
@@ -24,8 +22,11 @@ import ReorderDialog from "./components/ReorderDialog";
 
 // Context
 import { useAdGrid } from "contexts/AdGridContext";
+import { useMaterialUIController } from "context";
 
 function AdGridSystem() {
+  const [controller] = useMaterialUIController();
+  const { darkMode } = controller;
   const { gridItems, loading, error, fetchAllGridItems, reorderGridItems } = useAdGrid();
   const [showForm, setShowForm] = useState(false);
   const [showReorder, setShowReorder] = useState(false);
@@ -104,6 +105,11 @@ function AdGridSystem() {
   }, [filteredItems, startIndex, limit]);
 
   const handlePageChange = (p) => setPage(p);
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setPage(1);
+  };
   const handleLimitChange = (e) => {
     setLimit(parseInt(e.target.value, 10));
     setPage(1);
@@ -134,7 +140,7 @@ function AdGridSystem() {
 
         {!showForm && (
           <MDBox mb={3}>
-            <TextField
+            <MDInput
               label="Buscar item..."
               variant="outlined"
               fullWidth
@@ -142,6 +148,18 @@ function AdGridSystem() {
               onChange={(e) => {
                 setSearchTerm(e.target.value);
                 setPage(1);
+              }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    {searchTerm && (
+                      <IconButton onClick={handleClearSearch} size="small" sx={{ mr: 1 }}>
+                        <Icon sx={{ color: darkMode ? "white.main" : "inherit" }}>close</Icon>
+                      </IconButton>
+                    )}
+                    <Icon sx={{ color: darkMode ? "white.main" : "inherit" }}>search</Icon>
+                  </InputAdornment>
+                ),
               }}
             />
           </MDBox>
