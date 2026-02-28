@@ -98,8 +98,8 @@ function Orders() {
   useEffect(() => {
     fetchOrders(page, limit, sort, searchTerm, !showPending);
     const intervalId = setInterval(() => {
-      fetchOrders(page, limit, sort, searchTerm, !showPending);
-    }, 30000); // 30000 milliseconds = 30 seconds
+      fetchOrders(page, limit, sort, searchTerm, !showPending, true);
+    }, 8000); // 8000 milliseconds = 8 seconds
 
     return () => clearInterval(intervalId);
   }, [fetchOrders, page, limit, sort, searchTerm, showPending]);

@@ -32,7 +32,14 @@ export const OrderProvider = ({ children }) => {
 
   // This function remains as is, it's used by the component for pagination.
   const fetchOrders = useCallback(
-    async (page = 1, limit = 10, sort = "createdAt_desc", search = "", excludePending = false) => {
+    async (
+      page = 1,
+      limit = 10,
+      sort = "createdAt_desc",
+      search = "",
+      excludePending = false,
+      silent = false
+    ) => {
       if (!authToken) {
         setOrders([]);
         setLoading(false);
@@ -47,7 +54,7 @@ export const OrderProvider = ({ children }) => {
         return;
       }
 
-      setLoading(true);
+      setLoading(!silent);
       setError(null);
       try {
         const params = new URLSearchParams();

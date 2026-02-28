@@ -516,24 +516,24 @@ function ProductDetail() {
                         <MDBox
                           p={2}
                           borderRadius="lg"
-                          variant={userResellerCategory === cat ? "gradient" : "contained"}
-                          bgColor={userResellerCategory === cat ? "info" : "grey-100"}
+                          variant="gradient"
+                          bgColor="info"
                           textAlign="center"
-                          sx={{ transition: "all 0.2s" }}
+                          sx={{
+                            transition: "all 0.2s",
+                            // Subtle highlighting for the user's own category
+                            border:
+                              userResellerCategory === cat
+                                ? "2px solid rgba(255,255,255,0.8)"
+                                : "none",
+                            boxShadow: userResellerCategory === cat ? 3 : 1,
+                          }}
                         >
-                          <MDTypography
-                            variant="caption"
-                            color={userResellerCategory === cat ? "white" : "text"}
-                            fontWeight="bold"
-                          >
+                          <MDTypography variant="caption" color="white" fontWeight="bold">
                             {"Nivel " + cat.replace("cat", "")}{" "}
                             {userResellerCategory === cat && "(Tu Nivel)"}
                           </MDTypography>
-                          <MDTypography
-                            variant="h6"
-                            color={userResellerCategory === cat ? "white" : "dark"}
-                            fontWeight="bold"
-                          >
+                          <MDTypography variant="h6" color="white" fontWeight="bold">
                             {product.resellerPrices?.[cat]?.toLocaleString("es-CR", {
                               style: "currency",
                               currency: "CRC",

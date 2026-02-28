@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -37,6 +37,7 @@ import { useAuth } from "contexts/AuthContext";
 import { useLabels } from "contexts/LabelContext";
 import { useVariants } from "contexts/VariantContext";
 import { useMaterialUIController } from "context";
+import API_URL from "../../../config";
 
 function EditProduct() {
   const [controller] = useMaterialUIController();
@@ -79,6 +80,7 @@ function EditProduct() {
     dimensions: { width: 0, height: 0, depth: 0 },
     weight: 0,
     recommendedLocation: "",
+    descriptionImages: [], // Nuevo campo para las imágenes de la descripción
   });
 
   const [existingImageUrls, setExistingImageUrls] = useState([]);
@@ -108,15 +110,69 @@ function EditProduct() {
   ];
 
   // Rich Text Editor Modules
-  const quillModules = {
-    toolbar: [
-      [{ header: [1, 2, 3, false] }],
-      ["bold", "italic", "underline", "strike"],
-      [{ color: [] }, { background: [] }],
-      [{ list: "ordered" }, { list: "bullet" }],
-      ["link", "clean"],
-    ],
-  };
+  const quillModules = useMemo(
+    () => ({
+      toolbar: {
+        container: [
+          [{ header: [1, 2, 3, false] }],
+          ["bold", "italic", "underline", "strike"],
+          [{ color: [] }, { background: [] }],
+          [{ list: "ordered" }, { list: "bullet" }],
+          ["link", "image", "clean"],
+        ],
+        handlers: {
+          image: function () {
+            const input = document.createElement("input");
+            input.setAttribute("type", "file");
+            input.setAttribute("accept", "image/*");
+            input.click();
+
+            input.onchange = async () => {
+              const file = input.files[0];
+              if (file) {
+                const formData = new FormData();
+                formData.append("image", file);
+
+                try {
+                  const storedUser = localStorage.getItem("user");
+                  const token = storedUser ? JSON.parse(storedUser).token : "";
+
+                  const res = await fetch(`${API_URL}/api/products/upload-description-image`, {
+                    method: "POST",
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                    body: formData,
+                  });
+                  const data = await res.json();
+
+                  if (data.success) {
+                    const quill = this.quill;
+                    const range = quill.getSelection();
+                    quill.insertEmbed(range.index, "image", data.secure_url);
+
+                    setProductData((prev) => ({
+                      ...prev,
+                      descriptionImages: [
+                        ...prev.descriptionImages,
+                        { public_id: data.public_id, secure_url: data.secure_url },
+                      ],
+                    }));
+                  } else {
+                    toast.error(data.message || "Error al subir la imagen.");
+                  }
+                } catch (err) {
+                  console.error("Error upload quill image:", err);
+                  toast.error("Error de conexión al subir la imagen.");
+                }
+              }
+            };
+          },
+        },
+      },
+    }),
+    []
+  );
 
   const voltageOptions = [
     { value: "110V", label: "110V" },
@@ -192,6 +248,7 @@ function EditProduct() {
             dimensions: fetchedProduct.dimensions || { width: 0, height: 0, depth: 0 },
             weight: fetchedProduct.weight || 0,
             recommendedLocation: fetchedProduct.recommendedLocation || "",
+            descriptionImages: fetchedProduct.descriptionImages || [],
           });
           setExistingImageUrls(fetchedProduct.imageUrls || []);
 

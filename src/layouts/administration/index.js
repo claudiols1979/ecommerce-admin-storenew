@@ -24,6 +24,9 @@ import Footer from "examples/Footer";
 // Contexts
 import { useConfig } from "contexts/ConfigContext";
 
+// Components
+import FAQManager from "./components/FAQManager";
+
 function Administration() {
   const { configs, updateConfig, loading, systemEnv, envLoading } = useConfig();
   const [isUpdating, setIsUpdating] = useState(false);
@@ -91,6 +94,7 @@ function Administration() {
                 >
                   <Tab label="Fiscal" />
                   <Tab label="Marketing" />
+                  <Tab label="FAQ" />
                   <Tab label="Sistema" />
                 </Tabs>
 
@@ -188,6 +192,8 @@ function Administration() {
                       </MDButton>
                     </MDBox>
                   </MDBox>
+                ) : activeTab === 2 ? (
+                  <FAQManager />
                 ) : (
                   <MDBox>
                     <MDTypography variant="h6" mb={2}>
@@ -200,6 +206,59 @@ function Administration() {
                     ) : systemEnv ? (
                       <MDBox>
                         <MDBox mb={3}>
+                          <MDTypography variant="button" fontWeight="bold" color="info">
+                            Configuración del Servidor (Backend)
+                          </MDTypography>
+                          <MDBox ml={2} mt={1}>
+                            <SystemVar label="Entorno" value={systemEnv.backend?.nodeEnv} />
+                            <SystemVar label="Puerto" value={systemEnv.backend?.port} />
+                            <SystemVar label="MongoDB URI" value={systemEnv.backend?.mongoUri} />
+                            <SystemVar label="JWT Secret" value={systemEnv.backend?.jwtSecret} />
+                            <SystemVar label="Email User" value={systemEnv.backend?.emailUser} />
+                            <SystemVar
+                              label="Cloudinary Name"
+                              value={systemEnv.backend?.cloudinaryName}
+                            />
+                            <SystemVar
+                              label="Frontend URL"
+                              value={systemEnv.backend?.frontendUrl}
+                            />
+                            <SystemVar
+                              label="Frontend Store URL"
+                              value={systemEnv.backend?.frontendStoreUrl}
+                            />
+                          </MDBox>
+                        </MDBox>
+
+                        <Divider />
+
+                        <MDBox mb={3} mt={2}>
+                          <MDTypography variant="button" fontWeight="bold" color="info">
+                            Asistente AI (DeepSeek)
+                          </MDTypography>
+                          <MDBox ml={2} mt={1}>
+                            <SystemVar label="API Key" value={systemEnv.deepseek?.apiKey} />
+                            <SystemVar label="API URL" value={systemEnv.deepseek?.apiUrl} />
+                            <SystemVar label="Modelo" value={systemEnv.deepseek?.model} />
+                            <SystemVar
+                              label="Temperatura"
+                              value={systemEnv.deepseek?.temperature}
+                            />
+                            <SystemVar label="Max Tokens" value={systemEnv.deepseek?.maxTokens} />
+                            <SystemVar
+                              label="Ventana Rate Limit"
+                              value={`${systemEnv.deepseek?.rateLimitWindow} ms`}
+                            />
+                            <SystemVar
+                              label="Max Mensajes"
+                              value={systemEnv.deepseek?.rateLimitMax}
+                            />
+                          </MDBox>
+                        </MDBox>
+
+                        <Divider />
+
+                        <MDBox mb={3} mt={2}>
                           <MDTypography variant="button" fontWeight="bold" color="info">
                             Tilopay (Pasarela de Pagos)
                           </MDTypography>

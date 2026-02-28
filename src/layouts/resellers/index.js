@@ -296,7 +296,9 @@ function Resellers() {
                         <InputAdornment position="end">
                           {searchTerm && (
                             <IconButton onClick={handleClearSearch} size="small" sx={{ mr: 1 }}>
-                              <CloseIcon sx={{ color: darkMode ? "#ffffff !important" : "inherit" }} />
+                              <CloseIcon
+                                sx={{ color: darkMode ? "#ffffff !important" : "inherit" }}
+                              />
                             </IconButton>
                           )}
                           <SearchIcon sx={{ color: darkMode ? "#ffffff !important" : "inherit" }} />

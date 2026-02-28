@@ -417,11 +417,15 @@ function Products() {
                         <InputAdornment position="end">
                           {searchTerm && (
                             <IconButton onClick={handleClearSearch} size="small" sx={{ mr: 1 }}>
-                              <CloseIcon sx={{ color: darkMode ? "#ffffff !important" : "inherit" }} />
+                              <CloseIcon
+                                sx={{ color: darkMode ? "#ffffff !important" : "inherit" }}
+                              />
                             </IconButton>
                           )}
                           <IconButton onClick={handleSearch} edge="end">
-                            <SearchIcon sx={{ color: darkMode ? "#ffffff !important" : "inherit" }} />
+                            <SearchIcon
+                              sx={{ color: darkMode ? "#ffffff !important" : "inherit" }}
+                            />
                           </IconButton>
                         </InputAdornment>
                       ),

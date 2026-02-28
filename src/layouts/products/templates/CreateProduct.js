@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -36,6 +36,7 @@ import { useLabels } from "contexts/LabelContext"; // <-- 1. IMPORTAR EL CONTEXT
 import { useVariants } from "contexts/VariantContext";
 import { useMaterialUIController } from "context";
 import { Divider } from "@mui/material";
+import API_URL from "../../../config";
 
 function CreateProduct() {
   const [controller] = useMaterialUIController();
@@ -80,6 +81,7 @@ function CreateProduct() {
     dimensions: { width: 0, height: 0, depth: 0 },
     weight: 0,
     recommendedLocation: "",
+    descriptionImages: [], // Nuevo estado para las imágenes de la descripción
   });
 
   const [materialInput, setMaterialInput] = useState("");
@@ -90,15 +92,69 @@ function CreateProduct() {
   const [formErrors, setFormErrors] = useState({});
 
   // Rich Text Editor Modules
-  const quillModules = {
-    toolbar: [
-      [{ header: [1, 2, 3, false] }],
-      ["bold", "italic", "underline", "strike"],
-      [{ color: [] }, { background: [] }],
-      [{ list: "ordered" }, { list: "bullet" }],
-      ["link", "clean"],
-    ],
-  };
+  const quillModules = useMemo(
+    () => ({
+      toolbar: {
+        container: [
+          [{ header: [1, 2, 3, false] }],
+          ["bold", "italic", "underline", "strike"],
+          [{ color: [] }, { background: [] }],
+          [{ list: "ordered" }, { list: "bullet" }],
+          ["link", "image", "clean"],
+        ],
+        handlers: {
+          image: function () {
+            const input = document.createElement("input");
+            input.setAttribute("type", "file");
+            input.setAttribute("accept", "image/*");
+            input.click();
+
+            input.onchange = async () => {
+              const file = input.files[0];
+              if (file) {
+                const formData = new FormData();
+                formData.append("image", file);
+
+                try {
+                  const storedUser = localStorage.getItem("user");
+                  const token = storedUser ? JSON.parse(storedUser).token : "";
+
+                  const res = await fetch(`${API_URL}/api/products/upload-description-image`, {
+                    method: "POST",
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                    body: formData,
+                  });
+                  const data = await res.json();
+
+                  if (data.success) {
+                    const quill = this.quill;
+                    const range = quill.getSelection();
+                    quill.insertEmbed(range.index, "image", data.secure_url);
+
+                    setProductData((prev) => ({
+                      ...prev,
+                      descriptionImages: [
+                        ...prev.descriptionImages,
+                        { public_id: data.public_id, secure_url: data.secure_url },
+                      ],
+                    }));
+                  } else {
+                    toast.error(data.message || "Error al subir la imagen.");
+                  }
+                } catch (err) {
+                  console.error("Error upload quill image:", err);
+                  toast.error("Error de conexión al subir la imagen.");
+                }
+              }
+            };
+          },
+        },
+      },
+    }),
+    []
+  );
 
   // --- 3. NUEVO ESTADO PARA LAS ETIQUETAS SELECCIONADAS ---
   const [selectedLabelIds, setSelectedLabelIds] = useState([]);

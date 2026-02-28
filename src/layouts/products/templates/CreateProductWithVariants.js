@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -42,6 +42,7 @@ import { useProducts } from "contexts/ProductContext";
 import { useLabels } from "contexts/LabelContext"; // Importar el contexto de etiquetas
 import { useVariants } from "contexts/VariantContext"; // Importar el contexto de variantes
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import API_URL from "../../../config";
 
 const EMPTY_VARIANT = {
   codeSuffix: "",
@@ -86,6 +87,7 @@ function CreateProductWithVariants() {
         resellerPrices: templateRow.resellerPrices
           ? { ...templateRow.resellerPrices }
           : { cat1: 0, cat2: 0, cat3: 0, cat4: 0, cat5: 0 },
+        descriptionImages: templateRow.descriptionImages || [],
       };
     }
     return {
@@ -101,6 +103,7 @@ function CreateProductWithVariants() {
       gender: "unisex",
       tags: "",
       resellerPrices: { cat1: 0, cat2: 0, cat3: 0, cat4: 0, cat5: 0 },
+      descriptionImages: [],
     };
   });
 
@@ -111,15 +114,69 @@ function CreateProductWithVariants() {
   const [selectedLabelIds, setSelectedLabelIds] = useState([]);
 
   // Rich Text Editor Modules
-  const quillModules = {
-    toolbar: [
-      [{ header: [1, 2, 3, false] }],
-      ["bold", "italic", "underline", "strike"],
-      [{ color: [] }, { background: [] }],
-      [{ list: "ordered" }, { list: "bullet" }],
-      ["link", "clean"],
-    ],
-  };
+  const quillModules = useMemo(
+    () => ({
+      toolbar: {
+        container: [
+          [{ header: [1, 2, 3, false] }],
+          ["bold", "italic", "underline", "strike"],
+          [{ color: [] }, { background: [] }],
+          [{ list: "ordered" }, { list: "bullet" }],
+          ["link", "image", "clean"],
+        ],
+        handlers: {
+          image: function () {
+            const input = document.createElement("input");
+            input.setAttribute("type", "file");
+            input.setAttribute("accept", "image/*");
+            input.click();
+
+            input.onchange = async () => {
+              const file = input.files[0];
+              if (file) {
+                const formData = new FormData();
+                formData.append("image", file);
+
+                try {
+                  const storedUser = localStorage.getItem("user");
+                  const token = storedUser ? JSON.parse(storedUser).token : "";
+
+                  const res = await fetch(`${API_URL}/api/products/upload-description-image`, {
+                    method: "POST",
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                    body: formData,
+                  });
+                  const data = await res.json();
+
+                  if (data.success) {
+                    const quill = this.quill;
+                    const range = quill.getSelection();
+                    quill.insertEmbed(range.index, "image", data.secure_url);
+
+                    setBaseProduct((prev) => ({
+                      ...prev,
+                      descriptionImages: [
+                        ...(prev.descriptionImages || []),
+                        { public_id: data.public_id, secure_url: data.secure_url },
+                      ],
+                    }));
+                  } else {
+                    toast.error(data.message || "Error al subir la imagen.");
+                  }
+                } catch (err) {
+                  console.error("Error upload quill image:", err);
+                  toast.error("Error de conexión al subir la imagen.");
+                }
+              }
+            };
+          },
+        },
+      },
+    }),
+    []
+  );
 
   React.useEffect(() => {
     // Pre-seleccionar etiquetas promocionales si viene de template
