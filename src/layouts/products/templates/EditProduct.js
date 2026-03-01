@@ -64,6 +64,7 @@ function EditProduct() {
     volume: "",
     gender: "",
     tags: "",
+    searchTags: "",
     countInStock: 0,
     active: true,
     resellerPrices: { cat1: 0, cat2: 0, cat3: 0, cat4: 0, cat5: 0 },
@@ -227,6 +228,7 @@ function EditProduct() {
             volume: fetchedProduct.volume || "",
             gender: fetchedProduct.gender || "Unisex",
             tags: fetchedProduct.tags ? fetchedProduct.tags.join(", ") : "",
+            searchTags: fetchedProduct.searchTags ? fetchedProduct.searchTags.join(", ") : "",
             countInStock: fetchedProduct.countInStock || 0,
             active: fetchedProduct.active !== undefined ? fetchedProduct.active : true,
             resellerPrices: fetchedProduct.resellerPrices || {
@@ -396,6 +398,12 @@ function EditProduct() {
           .map((t) => t.trim())
           .filter((t) => t)
           .forEach((t) => formData.append("tags", t));
+      } else if (key === "searchTags") {
+        productData.searchTags
+          .split(",")
+          .map((t) => t.trim())
+          .filter((t) => t)
+          .forEach((t) => formData.append("searchTags", t));
       } else {
         formData.append(key, productData[key]);
       }
@@ -659,6 +667,16 @@ function EditProduct() {
                       value={productData.tags}
                       onChange={handleChange}
                       fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} mb={2}>
+                    <MDInput
+                      label="Etiquetas Búsqueda (opcional, separadas por coma)"
+                      name="searchTags"
+                      value={productData.searchTags}
+                      onChange={handleChange}
+                      fullWidth
+                      placeholder="ej: pantalon, men, rebajas"
                     />
                   </Grid>
                   <Grid item xs={12} sm={6} mt={-5}>

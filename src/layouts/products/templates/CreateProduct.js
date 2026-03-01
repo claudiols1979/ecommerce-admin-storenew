@@ -65,6 +65,7 @@ function CreateProduct() {
     volume: "",
     gender: "Unisex",
     tags: "",
+    searchTags: "",
     countInStock: 0,
     active: true,
     resellerPrices: { cat1: 0, cat2: 0, cat3: 0, cat4: 0, cat5: 0 },
@@ -357,6 +358,14 @@ function CreateProduct() {
           .forEach((tag) => {
             formData.append("tags", tag);
           });
+      } else if (key === "searchTags") {
+        productData.searchTags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter((tag) => tag !== "")
+          .forEach((tag) => {
+            formData.append("searchTags", tag);
+          });
       } else {
         formData.append(key, productData[key]);
       }
@@ -601,6 +610,17 @@ function CreateProduct() {
                       value={productData.tags}
                       onChange={handleChange}
                       fullWidth
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6} mb={2}>
+                    <MDInput
+                      label="Etiquetas Búsqueda (opcional, separadas por coma)"
+                      name="searchTags"
+                      value={productData.searchTags}
+                      onChange={handleChange}
+                      fullWidth
+                      placeholder="ej: pantalon, men, rebajas"
                     />
                   </Grid>
 
