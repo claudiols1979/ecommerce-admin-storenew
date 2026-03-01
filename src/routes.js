@@ -23,6 +23,8 @@ import HeroVideoCarousel from "layouts/herovideocarousel";
 import Resellers from "layouts/resellers";
 import ChatAnalytics from "layouts/chat-analytics";
 import Administration from "layouts/administration";
+import Reports from "layouts/reports"; // NEW: Reports layout
+import Claims from "layouts/claims"; // NEW: Claims layout
 import SignIn from "layouts/authentication/sign-in";
 import SignUp from "layouts/authentication/sign-up";
 import ForgotPassword from "layouts/authentication/reset-password/cover";
@@ -143,6 +145,24 @@ const routes = [
     route: "/orders/edit/:id", // Dynamic route for editing a specific order
     component: <EditOrder />,
     allowedRoles: ["Administrador", "Editor"], // Only Admins and Editors can edit orders
+  },
+  {
+    type: "collapse",
+    name: "Reporte Utilidad",
+    key: "reportes",
+    icon: <Icon fontSize="small">assessment</Icon>,
+    route: "/reports",
+    component: <Reports />,
+    allowedRoles: ["Administrador"], // Only Admins can see reports
+  },
+  {
+    type: "collapse",
+    name: "Reclamos",
+    key: "reclamos",
+    icon: <Icon fontSize="small">support_agent</Icon>,
+    route: "/claims",
+    component: <Claims />,
+    allowedRoles: ["Administrador", "Editor"],
   },
   {
     type: "collapse",

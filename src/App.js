@@ -73,6 +73,8 @@ import ResellerDetail from "layouts/resellers/templates/ResellerDetail";
 import Profile from "layouts/profile";
 import Administration from "layouts/administration";
 import ChatAnalytics from "layouts/chat-analytics";
+import Reports from "layouts/reports"; // NEW: Reports import
+import Claims from "layouts/claims"; // NEW: Claims import
 
 // Variantes
 import Variants from "layouts/variants";
@@ -369,6 +371,22 @@ function MainAppContent() {
                   element={
                     <ProtectedRoute allowedRoles={["Administrador", "Editor"]}>
                       <ChatAnalytics />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/reports"
+                  element={
+                    <ProtectedRoute allowedRoles={["Administrador"]}>
+                      <Reports />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/claims"
+                  element={
+                    <ProtectedRoute allowedRoles={["Administrador", "Editor"]}>
+                      <Claims />
                     </ProtectedRoute>
                   }
                 />

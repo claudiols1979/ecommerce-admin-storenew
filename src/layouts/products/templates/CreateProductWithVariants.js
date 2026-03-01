@@ -53,6 +53,7 @@ const EMPTY_VARIANT = {
   sizes: [],
   materials: [],
   features: [],
+  cost: 0, // NEW: Cost field
   resellerPrices: { cat1: 0, cat2: 0, cat3: 0, cat4: 0, cat5: 0 },
 };
 
@@ -88,6 +89,7 @@ function CreateProductWithVariants() {
           ? { ...templateRow.resellerPrices }
           : { cat1: 0, cat2: 0, cat3: 0, cat4: 0, cat5: 0 },
         descriptionImages: templateRow.descriptionImages || [],
+        cost: templateRow.cost || 0, // NEW: Cost field
       };
     }
     return {
@@ -102,6 +104,7 @@ function CreateProductWithVariants() {
       codigoCabys: "",
       gender: "unisex",
       tags: "",
+      cost: 0, // NEW: Cost field
       resellerPrices: { cat1: 0, cat2: 0, cat3: 0, cat4: 0, cat5: 0 },
       descriptionImages: [],
     };
@@ -214,7 +217,11 @@ function CreateProductWithVariants() {
   };
 
   const handleBaseChange = (field) => (e) => {
-    setBaseProduct((prev) => ({ ...prev, [field]: e.target.value }));
+    const value =
+      field === "cost" || field === "weight" || field === "countInStock"
+        ? parseFloat(e.target.value) || 0
+        : e.target.value;
+    setBaseProduct((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleBaseDescriptionChange = (content) => {
@@ -229,9 +236,13 @@ function CreateProductWithVariants() {
   };
 
   const handleVariantChange = (index, field) => (e) => {
+    const value =
+      field === "cost" || field === "weight" || field === "countInStock"
+        ? parseFloat(e.target.value) || 0
+        : e.target.value;
     setVariants((prev) => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: e.target.value };
+      updated[index] = { ...updated[index], [field]: value };
       return updated;
     });
   };
@@ -355,6 +366,7 @@ function CreateProductWithVariants() {
         codeSuffix: getAutoSuffix(v), // Auto override just before saving
         name: getAutoName(v),
         resellerPrices: v.resellerPrices?.cat1 ? v.resellerPrices : baseProduct.resellerPrices,
+        cost: v.cost || baseProduct.cost || 0, // NEW: Use variant cost or fallback to base cost
         countInStock: parseInt(v.countInStock) || 0,
       })),
     };
@@ -568,6 +580,16 @@ function CreateProductWithVariants() {
                       placeholder="fragancia, lujo, regalo"
                     />
                   </Grid>
+                  <Grid item xs={12} md={3}>
+                    <MDInput
+                      label="Costo Base (Opcional)"
+                      type="number"
+                      value={baseProduct.cost}
+                      onChange={handleBaseChange("cost")}
+                      fullWidth
+                      inputProps={{ min: 0, step: "0.01" }}
+                    />
+                  </Grid>
                 </Grid>
 
                 {/* Precios Base */}
@@ -722,6 +744,17 @@ function CreateProductWithVariants() {
                             onChange={handleVariantChange(index, "countInStock")}
                             fullWidth
                             inputProps={{ min: 0 }}
+                          />
+                        </Grid>
+                        <Grid item xs={12} md={3}>
+                          <MDInput
+                            label="Costo Variante"
+                            type="number"
+                            value={variant.cost}
+                            onChange={handleVariantChange(index, "cost")}
+                            fullWidth
+                            placeholder="Dejar 0 para usar base"
+                            inputProps={{ min: 0, step: "0.01" }}
                           />
                         </Grid>
 

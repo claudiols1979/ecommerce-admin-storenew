@@ -80,6 +80,7 @@ function EditProduct() {
     dimensions: { width: 0, height: 0, depth: 0 },
     weight: 0,
     recommendedLocation: "",
+    cost: 0, // NEW: Cost field
     descriptionImages: [], // Nuevo campo para las imágenes de la descripción
   });
 
@@ -248,6 +249,7 @@ function EditProduct() {
             dimensions: fetchedProduct.dimensions || { width: 0, height: 0, depth: 0 },
             weight: fetchedProduct.weight || 0,
             recommendedLocation: fetchedProduct.recommendedLocation || "",
+            cost: fetchedProduct.cost || 0, // NEW: Cost field
             descriptionImages: fetchedProduct.descriptionImages || [],
           });
           setExistingImageUrls(fetchedProduct.imageUrls || []);
@@ -287,8 +289,8 @@ function EditProduct() {
         ...prev,
         resellerPrices: { ...prev.resellerPrices, [cat]: parseFloat(value) || 0 },
       }));
-    } else if (name === "countInStock" || name === "weight") {
-      setProductData((prev) => ({ ...prev, [name]: parseInt(value, 10) || 0 }));
+    } else if (name === "countInStock" || name === "weight" || name === "cost") {
+      setProductData((prev) => ({ ...prev, [name]: parseFloat(value) || 0 }));
     } else if (type === "checkbox") {
       setProductData((prev) => ({ ...prev, [name]: checked }));
     } else {
@@ -360,6 +362,9 @@ function EditProduct() {
     const errors = {};
     if (!productData.name) errors.name = "El nombre es requerido.";
     if (!productData.code) errors.code = "El código es requerido.";
+    if (typeof productData.cost !== "number" || productData.cost < 0 || isNaN(productData.cost)) {
+      errors.cost = "El costo debe ser un número positivo o cero.";
+    }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -691,7 +696,7 @@ function EditProduct() {
                             {productData.countInStock}
                           </MDTypography>
                         </MDBox>
-                        <IconButton onClick={() => handleStockChange(1)} disabled>
+                        <IconButton onClick={() => handleStockChange(1)}>
                           <AddCircleOutlineIcon />
                         </IconButton>
                       </MDBox>
@@ -709,6 +714,20 @@ function EditProduct() {
                       />
                     )}
                   </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <MDInput
+                      label="Costo del Producto (Opcional)"
+                      name="cost"
+                      type="number"
+                      value={productData.cost}
+                      onChange={handleChange}
+                      fullWidth
+                      error={!!formErrors.cost}
+                      helperText={formErrors.cost}
+                      inputProps={{ min: 0, step: "0.01" }}
+                    />
+                  </Grid>
+
                   <Grid item xs={12}>
                     <MDBox display="flex" alignItems="center">
                       <MDTypography variant="body2" mr={1}>

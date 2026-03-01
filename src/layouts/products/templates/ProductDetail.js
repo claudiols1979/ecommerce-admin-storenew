@@ -510,6 +510,26 @@ function ProductDetail() {
                   </MDBox>
                   <Divider sx={{ mt: 0, mb: 2 }} />
 
+                  {(user?.role === "Administrador" || user?.role === "Editor") && (
+                    <MDBox mb={3} p={2} borderRadius="lg" bgcolor="grey.100">
+                      <MDTypography
+                        variant="caption"
+                        color="text"
+                        fontWeight="medium"
+                        textTransform="uppercase"
+                      >
+                        Costo de Adquisición (Solo Admin/Editor)
+                      </MDTypography>
+                      <MDTypography variant="h5" color="dark" fontWeight="bold">
+                        {product.cost?.toLocaleString("es-CR", {
+                          style: "currency",
+                          currency: "CRC",
+                          maximumFractionDigits: 0,
+                        }) || "₡0"}
+                      </MDTypography>
+                    </MDBox>
+                  )}
+
                   <Grid container spacing={2}>
                     {["cat1", "cat2", "cat3", "cat4", "cat5"].map((cat) => (
                       <Grid item xs={6} sm={4} md={2.4} key={cat}>

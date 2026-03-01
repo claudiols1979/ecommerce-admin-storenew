@@ -16,6 +16,7 @@ import Box from "@mui/material/Box";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
+import MDInput from "components/MDInput";
 import MDBadge from "components/MDBadge"; // Assuming MDBadge is used for status display
 import LocalPrintshopIcon from "@mui/icons-material/LocalPrintshop";
 
@@ -80,6 +81,8 @@ function OrderDetail() {
   const [order, setOrder] = useState(null);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [fetchError, setFetchError] = useState(null);
+  const [trackingNo, setTrackingNo] = useState("");
+  const [updatingTracking, setUpdatingTracking] = useState(false);
 
   // Determine the reseller category for pricing display
   // This might not be directly relevant for OrderDetail if prices are stored with the order,
@@ -114,6 +117,45 @@ function OrderDetail() {
       fetchOrderData();
     }
   }, [id, getOrderById]);
+
+  useEffect(() => {
+    if (order?.trackingNumber) {
+      setTrackingNo(order.trackingNumber);
+    }
+  }, [order]);
+
+  const handleUpdateTracking = async () => {
+    setUpdatingTracking(true);
+    try {
+      const { api } = useAuth.getState?.() || {}; // This is ad-hoc, better use a prop or context if available
+      // Actually, OrderContext should have the api or a method.
+      // Let's check how updateOrder is implemented.
+      // The user mentioned "modificar el admin app para incluir este campo opcional".
+
+      const token = localStorage.getItem("user")
+        ? JSON.parse(localStorage.getItem("user")).token
+        : null;
+      const API_URL = systemEnv?.REACT_APP_API_URL || "http://192.168.100.114:5000";
+
+      const response = await fetch(`${API_URL}/api/orders/${id}/tracking`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ trackingNumber: trackingNo }),
+      });
+
+      if (!response.ok) throw new Error("Error al actualizar tracking");
+
+      toast.success("Número de guía actualizado");
+      setOrder({ ...order, trackingNumber: trackingNo });
+    } catch (err) {
+      toast.error(err.message || "Error al actualizar");
+    } finally {
+      setUpdatingTracking(false);
+    }
+  };
 
   const shippingDetails = order?.customerDetails || {};
   const currentProvince =
@@ -256,12 +298,19 @@ function OrderDetail() {
 
     const calculatedTotal = itemsSubtotal + itemsTax + shippingBase + shippingTax;
 
+    // NEW: Estimated cost calculation for fallback (if order record has 0 cost)
+    const estimatedTotalCost = order.items.reduce(
+      (acc, item) => acc + item.quantity * (item.costAtSale || item.product?.cost || 0),
+      0
+    );
+
     return {
       itemsSubtotal,
       itemsTax,
       shippingBase,
       shippingTax,
       total: calculatedTotal,
+      estimatedTotalCost,
     };
   })();
 
@@ -625,6 +674,33 @@ function OrderDetail() {
                       </MDTypography>{" "}
                       <OrderStatusBadge status={order.status} /> {/* Use the helper component */}
                     </MDBox>
+                    <MDBox mt={2} p={2} sx={{ border: "1px solid #eee", borderRadius: "8px" }}>
+                      <MDTypography variant="h6" mb={1} sx={{ fontSize: "0.9rem" }}>
+                        Guía Correos de Costa Rica:
+                      </MDTypography>
+                      <MDBox display="flex" gap={1}>
+                        <MDInput
+                          size="small"
+                          value={trackingNo}
+                          onChange={(e) => setTrackingNo(e.target.value)}
+                          placeholder="Número de guía..."
+                          fullWidth
+                        />
+                        <MDButton
+                          variant="gradient"
+                          color="info"
+                          size="small"
+                          onClick={handleUpdateTracking}
+                          disabled={updatingTracking}
+                        >
+                          {updatingTracking ? (
+                            <CircularProgress size={16} color="inherit" />
+                          ) : (
+                            "Actualizar"
+                          )}
+                        </MDButton>
+                      </MDBox>
+                    </MDBox>
                     <MDBox mt={2}>
                       <MDTypography variant="h6" mb={1}>
                         Desglose de Pago:
@@ -684,6 +760,50 @@ function OrderDetail() {
                           })}
                         </MDTypography>
                       </MDBox>
+
+                      {/* NEW: Profit & Cost Section for Admin/Editor */}
+                      {(user?.role === "Administrador" || user?.role === "Editor") && (
+                        <MDBox mt={2} pt={2} borderTop="2px dashed #eee">
+                          <MDTypography variant="h6" color="success">
+                            Información de Rentabilidad:
+                          </MDTypography>
+                          <MDTypography variant="body2" color="text" mb={0.5}>
+                            <MDTypography component="span" variant="button" fontWeight="bold">
+                              Costo Total:
+                            </MDTypography>{" "}
+                            {(() => {
+                              const effectiveCost =
+                                order.totalCost && order.totalCost > 0
+                                  ? order.totalCost
+                                  : displayBreakdown.estimatedTotalCost;
+                              return Math.round(effectiveCost).toLocaleString("es-CR", {
+                                style: "currency",
+                                currency: "CRC",
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              });
+                            })()}
+                          </MDTypography>
+                          <MDTypography variant="body2" color="text" mb={0.5}>
+                            <MDTypography component="span" variant="button" fontWeight="bold">
+                              Utilidad Total:
+                            </MDTypography>{" "}
+                            {(() => {
+                              const effectiveCost =
+                                order.totalCost && order.totalCost > 0
+                                  ? order.totalCost
+                                  : displayBreakdown.estimatedTotalCost;
+                              const profit = displayBreakdown.total - effectiveCost;
+                              return Math.round(profit).toLocaleString("es-CR", {
+                                style: "currency",
+                                currency: "CRC",
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              });
+                            })()}
+                          </MDTypography>
+                        </MDBox>
+                      )}
                     </MDBox>
                     <MDTypography variant="body2" color="text" mb={0.5}>
                       <MDTypography component="span" variant="button" fontWeight="bold">
@@ -775,6 +895,25 @@ function OrderDetail() {
                                   minimumFractionDigits: 0,
                                   maximumFractionDigits: 0,
                                 })}
+                                {(user?.role === "Administrador" || user?.role === "Editor") && (
+                                  <>
+                                    <br />
+                                    <MDTypography
+                                      component="span"
+                                      variant="caption"
+                                      color="text"
+                                      fontWeight="regular"
+                                    >
+                                      Costo unit:{" "}
+                                      {Math.round(item.costAtSale || 0).toLocaleString("es-CR", {
+                                        style: "currency",
+                                        currency: "CRC",
+                                        minimumFractionDigits: 0,
+                                        maximumFractionDigits: 0,
+                                      })}
+                                    </MDTypography>
+                                  </>
+                                )}
                               </MDTypography>
                             </MDBox>
                             <MDTypography variant="button" fontWeight="medium">

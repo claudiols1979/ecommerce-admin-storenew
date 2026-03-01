@@ -145,6 +145,7 @@ function EditOrder() {
 
   const [order, setOrder] = useState(null);
   const [currentStatus, setCurrentStatus] = useState("");
+  const [trackingNumber, setTrackingNumber] = useState("");
   const [orderTaxRegime, setOrderTaxRegime] = useState("traditional");
   const [cartItems, setCartItems] = useState([]);
   const [initialStatus, setInitialStatus] = useState("");
@@ -209,6 +210,7 @@ function EditOrder() {
           setOrder(fetchedOrder);
           setCurrentStatus(fetchedOrder.status);
           setInitialStatus(fetchedOrder.status);
+          setTrackingNumber(fetchedOrder.trackingNumber || "Pendiente");
           setOrderTaxRegime(fetchedOrder.taxRegime || globalTaxRegime || "traditional");
           const mappedItems = fetchedOrder.items.map((item) => {
             const productInfo =
@@ -449,12 +451,15 @@ function EditOrder() {
         (order.customerDetails?.canton || order.customerDetails?.city || "") ||
       customerDetails.distrito !== (order.customerDetails?.distrito || "");
 
-    if (!hasStatusChanged && !hasItemsChanged && !hasAddressChanged)
+    const hasTrackingChanged = trackingNumber !== (order.trackingNumber || "Pendiente");
+
+    if (!hasStatusChanged && !hasItemsChanged && !hasAddressChanged && !hasTrackingChanged)
       return toast.info("No hay cambios para guardar.");
     if (hasItemsChanged && !canModifyOrderItemsStatuses.includes(initialStatus))
       return toast.error("No se pueden modificar los artículos en este estado.");
     const updatedData = {
       status: currentStatus,
+      trackingNumber: trackingNumber,
       taxRegime: orderTaxRegime,
       items: cartItems.map((item) => ({
         product: item.product._id,
@@ -650,6 +655,27 @@ function EditOrder() {
                         ))}
                       </Select>
                     </FormControl>
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Número de Guía (Correos de Costa Rica)"
+                      value={trackingNumber}
+                      onChange={(e) => setTrackingNumber(e.target.value)}
+                      variant="outlined"
+                      sx={{
+                        "& .MuiInputBase-input": {
+                          color: darkMode ? "#fff !important" : "inherit",
+                        },
+                        "& .MuiInputLabel-root": {
+                          color: darkMode ? "rgba(255, 255, 255, 0.7) !important" : "inherit",
+                        },
+                        "& .MuiOutlinedInput-notchedOutline": {
+                          borderColor: darkMode ? "rgba(255, 255, 255, 0.3) !important" : "inherit",
+                        },
+                      }}
+                    />
                   </Grid>
 
                   <Grid item xs={12}>

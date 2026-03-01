@@ -81,6 +81,7 @@ function CreateProduct() {
     dimensions: { width: 0, height: 0, depth: 0 },
     weight: 0,
     recommendedLocation: "",
+    cost: 0, // NEW: Cost field
     descriptionImages: [], // Nuevo estado para las imágenes de la descripción
   });
 
@@ -233,7 +234,7 @@ function CreateProduct() {
         ...prev,
         resellerPrices: { ...prev.resellerPrices, [cat]: parseFloat(value) || 0 },
       }));
-    } else if (name === "countInStock" || name === "weight") {
+    } else if (name === "countInStock" || name === "weight" || name === "cost") {
       setProductData((prev) => ({ ...prev, [name]: parseFloat(value) || 0 }));
     } else if (type === "checkbox") {
       setProductData((prev) => ({ ...prev, [name]: checked }));
@@ -307,6 +308,9 @@ function CreateProduct() {
       isNaN(productData.countInStock)
     ) {
       errors.countInStock = "El stock debe ser un número positivo o cero.";
+    }
+    if (typeof productData.cost !== "number" || productData.cost < 0 || isNaN(productData.cost)) {
+      errors.cost = "El costo debe ser un número positivo o cero.";
     }
     const requiredCategories = ["cat1", "cat2", "cat3", "cat4", "cat5"];
     requiredCategories.forEach((cat) => {
@@ -652,6 +656,20 @@ function CreateProduct() {
                         inputProps={{ min: 0, step: "1" }}
                       />
                     )}
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <MDInput
+                      label="Costo del Producto (Opcional)"
+                      name="cost"
+                      type="number"
+                      value={productData.cost}
+                      onChange={handleChange}
+                      fullWidth
+                      error={!!formErrors.cost}
+                      helperText={formErrors.cost}
+                      inputProps={{ min: 0, step: "0.01" }}
+                    />
                   </Grid>
 
                   <Grid item xs={12}>
