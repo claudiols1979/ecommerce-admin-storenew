@@ -14,6 +14,8 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 
+import MDInput from "components/MDInput";
+
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
@@ -29,6 +31,8 @@ import API_URL from "../../config";
 
 function Reports() {
   const [filter, setFilter] = useState("month");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -40,7 +44,12 @@ function Reports() {
       const storedUser = localStorage.getItem("user");
       const token = storedUser ? JSON.parse(storedUser).token : "";
 
-      const response = await axios.get(`${API_URL}/api/reports/profit?period=${filter}`, {
+      let url = `${API_URL}/api/reports/profit?period=${filter}`;
+      if (filter === "custom" && startDate && endDate) {
+        url = `${API_URL}/api/reports/profit?startDate=${startDate}&endDate=${endDate}`;
+      }
+
+      const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -51,11 +60,22 @@ function Reports() {
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  }, [filter, startDate, endDate]);
+
+  const [fetchTrigger, setFetchTrigger] = useState(0);
 
   useEffect(() => {
-    fetchReportData();
-  }, [fetchReportData]);
+    // If it's a predefined filter, fetch immediately.
+    if (filter !== "custom") {
+      fetchReportData();
+    }
+    // If it's custom, only fetch when explicitly triggered by the button (fetchTrigger changes).
+    else if (filter === "custom" && fetchTrigger > 0) {
+      if (startDate && endDate) {
+        fetchReportData();
+      }
+    }
+  }, [fetchReportData, filter, fetchTrigger]); // Intentionally leaving out startDate/endDate so it doesn't fetch on every keystroke
 
   const formatCurrency = (amount) => `₡${Math.round(amount || 0).toLocaleString("es-CR")}`;
 
@@ -220,43 +240,99 @@ function Reports() {
     <DashboardLayout>
       <DashboardNavbar />
       <MDBox py={3}>
-        <MDBox display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <MDBox
+          display="flex"
+          flexDirection={{ xs: "column", md: "row" }}
+          justifyContent="space-between"
+          alignItems={{ xs: "flex-start", md: "center" }}
+          mb={3}
+          gap={2}
+        >
           <MDTypography variant="h4" fontWeight="medium">
             Reporte de Utilidades
           </MDTypography>
-          <MDBox display="flex" gap={1}>
-            <MDButton
-              variant={filter === "day" ? "gradient" : "outlined"}
-              color="info"
-              size="small"
-              onClick={() => setFilter("day")}
+          <MDBox
+            display="flex"
+            flexDirection={{ xs: "column", xl: "row" }}
+            alignItems={{ xs: "flex-start", xl: "center" }}
+            gap={2}
+            width={{ xs: "100%", md: "auto" }}
+          >
+            <MDBox display="flex" flexWrap="wrap" gap={1}>
+              <MDButton
+                variant={filter === "day" ? "gradient" : "outlined"}
+                color="info"
+                size="small"
+                onClick={() => setFilter("day")}
+              >
+                Hoy
+              </MDButton>
+              <MDButton
+                variant={filter === "week" ? "gradient" : "outlined"}
+                color="info"
+                size="small"
+                onClick={() => setFilter("week")}
+              >
+                Semana
+              </MDButton>
+              <MDButton
+                variant={filter === "month" ? "gradient" : "outlined"}
+                color="info"
+                size="small"
+                onClick={() => setFilter("month")}
+              >
+                Mes
+              </MDButton>
+              <MDButton
+                variant={filter === "year" ? "gradient" : "outlined"}
+                color="info"
+                size="small"
+                onClick={() => setFilter("year")}
+              >
+                Año
+              </MDButton>
+            </MDBox>
+
+            <MDBox
+              display="flex"
+              flexDirection={{ xs: "column", sm: "row" }}
+              gap={2}
+              alignItems="center"
+              width={{ xs: "100%", md: "auto" }}
             >
-              Hoy
-            </MDButton>
-            <MDButton
-              variant={filter === "week" ? "gradient" : "outlined"}
-              color="info"
-              size="small"
-              onClick={() => setFilter("week")}
-            >
-              Semana
-            </MDButton>
-            <MDButton
-              variant={filter === "month" ? "gradient" : "outlined"}
-              color="info"
-              size="small"
-              onClick={() => setFilter("month")}
-            >
-              Mes
-            </MDButton>
-            <MDButton
-              variant={filter === "year" ? "gradient" : "outlined"}
-              color="info"
-              size="small"
-              onClick={() => setFilter("year")}
-            >
-              Año
-            </MDButton>
+              <MDInput
+                type="date"
+                label="Fecha de Inicio"
+                InputLabelProps={{ shrink: true }}
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                size="small"
+                fullWidth
+              />
+              <MDInput
+                type="date"
+                label="Fecha Final"
+                InputLabelProps={{ shrink: true }}
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                size="small"
+                fullWidth
+              />
+              <MDButton
+                variant={filter === "custom" ? "gradient" : "outlined"}
+                color="success"
+                size="small"
+                onClick={() => {
+                  setFilter("custom");
+                  setFetchTrigger((prev) => prev + 1);
+                }}
+                disabled={!startDate || !endDate}
+                fullWidth
+                sx={{ minWidth: { sm: "120px" } }}
+              >
+                Filtrar
+              </MDButton>
+            </MDBox>
           </MDBox>
         </MDBox>
 

@@ -66,6 +66,7 @@ function Products() {
 
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [productIdToDelete, setProductIdToDelete] = useState(null);
+  const [fetchTrigger, setFetchTrigger] = useState(0);
 
   const canManageProducts = user?.role === "Administrador" || user?.role === "Editor";
   const canViewAllProducts =
@@ -73,12 +74,9 @@ function Products() {
 
   // --- MODIFICATION: ADD USEEFFECT FOR DATA FETCHING ---
   useEffect(() => {
-    // This effect runs on initial mount and whenever page or limit changes.
-    // On mount, searchTerm is "", so it fetches all products for the first page.
-    // When paginating, it re-fetches with the correct page number,
-    // still respecting any active searchTerm.
     getProducts(searchTerm);
-  }, [page, limit]); // It runs when page or limit changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, limit, fetchTrigger]);
 
   // --- MODIFIED AND NEW HANDLERS ---
   const handleSearchChange = (event) => {
@@ -86,8 +84,11 @@ function Products() {
   };
 
   const handleSearch = () => {
-    setPage(1);
-    getProducts(searchTerm);
+    if (page !== 1) {
+      setPage(1); // This will naturally trigger the useEffect
+    } else {
+      setFetchTrigger((prev) => prev + 1); // Force fetch on the exact same page 1
+    }
   };
 
   const handleKeyPress = (event) => {
@@ -98,8 +99,11 @@ function Products() {
 
   const handleClearSearch = () => {
     setSearchTerm("");
-    setPage(1);
-    getProducts("");
+    if (page !== 1) {
+      setPage(1);
+    } else {
+      setFetchTrigger((prev) => prev + 1);
+    }
   };
 
   // --- EXISTING HANDLERS (UNCHANGED) ---
