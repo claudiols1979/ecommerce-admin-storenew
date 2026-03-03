@@ -358,9 +358,9 @@ function CreateProductWithVariants() {
         ...baseProduct,
         tags: baseProduct.tags
           ? baseProduct.tags
-            .split(",")
-            .map((t) => t.trim())
-            .filter(Boolean)
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean)
           : [],
       },
       variants: variants.map((v) => ({
@@ -683,8 +683,9 @@ function CreateProductWithVariants() {
                     defaultExpanded={index === 0}
                     sx={(theme) => ({
                       mb: 1,
-                      backgroundColor: `${theme.palette.background.card || theme.palette.background.default
-                        } !important`,
+                      backgroundColor: `${
+                        theme.palette.background.card || theme.palette.background.default
+                      } !important`,
                       backgroundImage: "none !important",
                       border: "1px solid",
                       borderColor: "divider",

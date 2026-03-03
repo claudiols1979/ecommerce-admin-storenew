@@ -19,6 +19,8 @@ import CreateReseller from "layouts/resellers/templates/CreateReseller";
 import EditReseller from "layouts/resellers/templates/EditReseller";
 import HeroCarousel from "layouts/herocarousel";
 import AdGridSystem from "layouts/adgridsystem";
+import AdGridSystem2 from "layouts/adgridsystem2";
+import AdGridSystem3 from "layouts/adgridsystem3";
 import HeroVideoCarousel from "layouts/herovideocarousel";
 import Resellers from "layouts/resellers";
 import ChatAnalytics from "layouts/chat-analytics";
@@ -118,6 +120,24 @@ const routes = [
     route: "/adgridsystem",
     component: <AdGridSystem />,
     allowedRoles: ["Administrador", "Editor", "ReVendedor"], // Assuming all authenticated users can view orders initially
+  },
+  {
+    type: "collapse",
+    name: "Grid Promocional 2",
+    key: "AdGridSystem2",
+    icon: <Icon fontSize="small">view_agenda</Icon>,
+    route: "/ad-grid-2",
+    component: <AdGridSystem2 />,
+    allowedRoles: ["Administrador", "Editor"],
+  },
+  {
+    type: "collapse",
+    name: "Grid Promocional 3",
+    key: "AdGridSystem3",
+    icon: <Icon fontSize="small">grid_view</Icon>,
+    route: "/ad-grid-3",
+    component: <AdGridSystem3 />,
+    allowedRoles: ["Administrador", "Editor"],
   },
   {
     type: "collapse",
