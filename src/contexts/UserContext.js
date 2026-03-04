@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useAuth } from "./AuthContext"; // Assuming AuthContext provides user and token
+import API_URL from "../config";
 
 const UserContext = createContext();
 
@@ -16,8 +17,6 @@ export const UserProvider = ({ children }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  const BASE_URL = process.env.REACT_APP_BACKEND_URL || "http://192.168.100.75:5000/api"; // Adjust if your backend URL is different
 
   // Function to fetch all users (e.g., for approver selection)
   const getUsers = useCallback(async () => {
@@ -35,7 +34,7 @@ export const UserProvider = ({ children }) => {
         },
       };
       // Assuming a /api/users endpoint that returns all users
-      const { data } = await axios.get(`${BASE_URL}/users`, config);
+      const { data } = await axios.get(`${API_URL}/api/users`, config);
       setUsers(data.users); // Assuming response structure is { users: [...] }
     } catch (err) {
       const errorMessage = err.response?.data?.message || err.message || "Failed to fetch users.";

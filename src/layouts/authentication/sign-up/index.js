@@ -23,6 +23,7 @@ import MDButton from "components/MDButton";
 
 // Authentication layout components
 import CoverLayout from "layouts/authentication/components/CoverLayout";
+import AuthBranding from "components/common/AuthBranding";
 
 // Images
 import bgImage from "assets/images/bg-sign-up-cover.jpeg";
@@ -118,11 +119,14 @@ function Cover() {
   return (
     <CoverLayout image={bgImage}>
       <Card sx={glassCardSx}>
+        <MDBox pt={4} pb={0} px={3}>
+          <AuthBranding lightMode={true} />
+        </MDBox>
         <MDBox
           variant="gradient"
           borderRadius="lg"
           mx={2}
-          mt={-3}
+          mt={1}
           p={3}
           mb={1}
           textAlign="center"

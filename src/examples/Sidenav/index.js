@@ -185,6 +185,17 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
             <MDTypography component="h5" variant="h5" fontWeight="bold" color={textColor}>
               {brandName}
             </MDTypography>
+            <MDTypography
+              component="span"
+              variant="caption"
+              fontWeight="regular"
+              color={textColor}
+              display="block"
+              mt={-0.5}
+              sx={{ fontStyle: "italic", opacity: 0.8 }}
+            >
+              Original como vos!
+            </MDTypography>
 
             {user && ( // Only render if the 'user' object exists
               <MDTypography

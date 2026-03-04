@@ -20,20 +20,7 @@ const AuthBranding = ({ lightMode = false }) => {
           justifyContent: "center",
         }}
       >
-        Software
-        <Typography
-          component="span"
-          variant="h3"
-          sx={{
-            fontFamily: '"Lato", sans-serif',
-            fontWeight: 300,
-            fontStyle: "italic",
-            mx: 2,
-            color: textColor,
-          }}
-        >
-          Factory
-        </Typography>
+        {"ORIYINA⅃"}
       </Typography>
 
       <Typography
@@ -42,9 +29,10 @@ const AuthBranding = ({ lightMode = false }) => {
           mt: 1,
           letterSpacing: "0.05em",
           color: lightMode ? "rgba(255,255,255,0.8)" : "#263C5C",
+          fontStyle: "italic",
         }}
       >
-        ERP
+        Original como vos!
       </Typography>
     </Box>
   );

@@ -135,7 +135,7 @@ function OrderDetail() {
       const token = localStorage.getItem("user")
         ? JSON.parse(localStorage.getItem("user")).token
         : null;
-      const API_URL = systemEnv?.REACT_APP_API_URL || "http://192.168.100.114:5000";
+      const API_URL = systemEnv?.REACT_APP_BACKEND_URL || "http://192.168.100.114:5000";
 
       const response = await fetch(`${API_URL}/api/orders/${id}/tracking`, {
         method: "PUT",
@@ -441,7 +441,7 @@ function OrderDetail() {
     const { itemsSubtotal, itemsTax, shippingBase, shippingTax, total } = displayBreakdown;
     const isSimplified = order?.taxRegime === "simplified";
     const company = systemEnv?.company || {
-      name: "SOFTWARE FACTORY ERP",
+      name: "ORIYINA⅃",
       cedula: "3101750500",
       codigoActividad: "620200",
       address: "San José, Costa Rica",
@@ -550,7 +550,7 @@ function OrderDetail() {
             </div>
             
             <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 14px;">
-              <p><strong>SOFTWARE FACTORY ERP</strong></p>
+              <p><strong>ORIYINA⅃</strong></p>
               <p>¡Gracias por su preferencia!</p>
             </div>
           </div>

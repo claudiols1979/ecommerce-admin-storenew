@@ -21,6 +21,7 @@ import MDButton from "components/MDButton";
 
 // Authentication layout components
 import BasicLayout from "layouts/authentication/components/BasicLayout";
+import AuthBranding from "components/common/AuthBranding";
 
 // Images
 import bgImage from "assets/images/bg-sign-in-basic.jpeg";
@@ -104,11 +105,14 @@ function Basic() {
   return (
     <BasicLayout image={bgImage}>
       <Card sx={glassCardSx}>
+        <MDBox pt={4} pb={0} px={3}>
+          <AuthBranding lightMode={true} />
+        </MDBox>
         <MDBox
           variant="gradient"
           borderRadius="lg"
           mx={2}
-          mt={-3}
+          mt={1}
           p={2}
           mb={1}
           textAlign="center"
