@@ -232,8 +232,8 @@ function EditProduct() {
               : "",
             searchTags: fetchedProduct.searchTags
               ? fetchedProduct.searchTags
-                  .filter((t) => t && t !== "[]" && t.trim() !== "")
-                  .join(", ")
+                .filter((t) => t && t !== "[]" && t.trim() !== "")
+                .join(", ")
               : "",
             countInStock: fetchedProduct.countInStock || 0,
             active: fetchedProduct.active !== undefined ? fetchedProduct.active : true,
@@ -337,15 +337,22 @@ function EditProduct() {
   };
 
   const handleNewFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    const totalImages = existingImageUrls.length + files.length - imagesToDelete.length;
-    if (totalImages > 5) {
-      toast.error("Solo se permiten hasta 5 imágenes en total por producto.");
-      e.target.value = "";
-      return;
+    const newFiles = Array.from(e.target.files);
+    const currentNewCount = selectedNewFiles.length;
+    const totalPotentialImages = existingImageUrls.length + currentNewCount + newFiles.length - imagesToDelete.length;
+
+    if (totalPotentialImages > 5) {
+      toast.warning("Solo se permiten hasta 5 imágenes en total. Se han tomado solo las permitidas.");
     }
-    setSelectedNewFiles(files);
-    setNewFilePreviews(files.map((file) => URL.createObjectURL(file)));
+
+    const availableSlots = 5 - (existingImageUrls.length - imagesToDelete.length) - currentNewCount;
+    const filesToAdd = newFiles.slice(0, Math.max(0, availableSlots));
+
+    if (filesToAdd.length > 0) {
+      setSelectedNewFiles((prev) => [...prev, ...filesToAdd]);
+      const newPreviews = filesToAdd.map((file) => URL.createObjectURL(file));
+      setNewFilePreviews((prev) => [...prev, ...newPreviews]);
+    }
   };
 
   const handleDeleteExistingImage = (publicId) => {

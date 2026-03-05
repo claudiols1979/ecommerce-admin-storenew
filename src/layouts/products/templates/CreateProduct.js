@@ -275,14 +275,27 @@ function CreateProduct() {
   };
 
   const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length > 5) {
-      toast.error("Solo se permiten hasta 5 imágenes por producto.");
-      return;
-    }
-    setSelectedFiles(files);
-    const previews = files.map((file) => URL.createObjectURL(file));
-    setFilePreviews(previews);
+    const newFiles = Array.from(e.target.files);
+
+    setSelectedFiles((prev) => {
+      const combined = [...prev, ...newFiles].slice(0, 5);
+      if (prev.length + newFiles.length > 5) {
+        toast.warning("Solo se permiten hasta 5 imágenes. Se han tomado las primeras 5.");
+      }
+      return combined;
+    });
+
+    const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
+    setFilePreviews((prev) => [...prev, ...newPreviews].slice(0, 5));
+  };
+
+  const handleRemoveFile = (indexToRemove) => {
+    setSelectedFiles((prev) => prev.filter((_, index) => index !== indexToRemove));
+    setFilePreviews((prev) => {
+      // Importante: Liberar memoria del objeto URL
+      URL.revokeObjectURL(prev[indexToRemove]);
+      return prev.filter((_, index) => index !== indexToRemove);
+    });
   };
 
   // --- 5. NUEVO HANDLER PARA EL TOGGLE DE ETIQUETAS ---
@@ -1085,6 +1098,7 @@ function CreateProduct() {
                             mb={1}
                             borderRadius="lg"
                             overflow="hidden"
+                            position="relative"
                             sx={{
                               border: ({ borders }) =>
                                 `${borders.borderWidth[1]} solid ${borders.borderColor}`,
@@ -1095,6 +1109,20 @@ function CreateProduct() {
                               alt={`Preview ${index + 1}`}
                               style={{ width: "100%", height: "100%", objectFit: "cover" }}
                             />
+                            <IconButton
+                              size="small"
+                              color="error"
+                              sx={{
+                                position: "absolute",
+                                top: 0,
+                                right: 0,
+                                backgroundColor: "rgba(255,255,255,0.7)",
+                                "&:hover": { backgroundColor: "rgba(255,255,255,0.9)" },
+                              }}
+                              onClick={() => handleRemoveFile(index)}
+                            >
+                              <Icon>delete</Icon>
+                            </IconButton>
                           </MDBox>
                         ))}
                       </MDBox>
