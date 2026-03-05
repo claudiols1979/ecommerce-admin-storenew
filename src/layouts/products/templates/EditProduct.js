@@ -232,8 +232,8 @@ function EditProduct() {
               : "",
             searchTags: fetchedProduct.searchTags
               ? fetchedProduct.searchTags
-                .filter((t) => t && t !== "[]" && t.trim() !== "")
-                .join(", ")
+                  .filter((t) => t && t !== "[]" && t.trim() !== "")
+                  .join(", ")
               : "",
             countInStock: fetchedProduct.countInStock || 0,
             active: fetchedProduct.active !== undefined ? fetchedProduct.active : true,
@@ -339,10 +339,13 @@ function EditProduct() {
   const handleNewFileChange = (e) => {
     const newFiles = Array.from(e.target.files);
     const currentNewCount = selectedNewFiles.length;
-    const totalPotentialImages = existingImageUrls.length + currentNewCount + newFiles.length - imagesToDelete.length;
+    const totalPotentialImages =
+      existingImageUrls.length + currentNewCount + newFiles.length - imagesToDelete.length;
 
     if (totalPotentialImages > 5) {
-      toast.warning("Solo se permiten hasta 5 imágenes en total. Se han tomado solo las permitidas.");
+      toast.warning(
+        "Solo se permiten hasta 5 imágenes en total. Se han tomado solo las permitidas."
+      );
     }
 
     const availableSlots = 5 - (existingImageUrls.length - imagesToDelete.length) - currentNewCount;
