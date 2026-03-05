@@ -400,7 +400,8 @@ function EditProduct() {
             .filter((t) => t)
             .forEach((t) => formData.append("tags", t));
         } else {
-          formData.append("tags", "[]");
+          // Enviar string vacío para indicar al backend que debe limpiar el campo
+          formData.append("tags", "");
         }
       } else if (key === "searchTags") {
         if (productData.searchTags && productData.searchTags.trim() !== "") {
@@ -410,8 +411,7 @@ function EditProduct() {
             .filter((t) => t)
             .forEach((t) => formData.append("searchTags", t));
         } else {
-          // Send an empty JSON array explicitly if the user cleared the tags so the backend wipes them
-          formData.append("searchTags", "[]");
+          formData.append("searchTags", "");
         }
       } else {
         formData.append(key, productData[key]);
