@@ -227,8 +227,14 @@ function EditProduct() {
             category: fetchedProduct.category || "",
             volume: fetchedProduct.volume || "",
             gender: fetchedProduct.gender || "Unisex",
-            tags: fetchedProduct.tags ? fetchedProduct.tags.filter(t => t && t !== "[]" && t.trim() !== "").join(", ") : "",
-            searchTags: fetchedProduct.searchTags ? fetchedProduct.searchTags.filter(t => t && t !== "[]" && t.trim() !== "").join(", ") : "",
+            tags: fetchedProduct.tags
+              ? fetchedProduct.tags.filter((t) => t && t !== "[]" && t.trim() !== "").join(", ")
+              : "",
+            searchTags: fetchedProduct.searchTags
+              ? fetchedProduct.searchTags
+                  .filter((t) => t && t !== "[]" && t.trim() !== "")
+                  .join(", ")
+              : "",
             countInStock: fetchedProduct.countInStock || 0,
             active: fetchedProduct.active !== undefined ? fetchedProduct.active : true,
             resellerPrices: fetchedProduct.resellerPrices || {
