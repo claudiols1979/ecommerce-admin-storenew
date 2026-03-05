@@ -468,6 +468,9 @@ function CreateProduct() {
                           borderBottomRightRadius: "8px",
                           minHeight: "150px",
                         },
+                        "& .ql-editor": {
+                          minHeight: "150px",
+                        },
                         "& .ql-stroke": {
                           stroke: darkMode ? "#fff" : "#444",
                         },
