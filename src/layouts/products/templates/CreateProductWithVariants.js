@@ -84,8 +84,8 @@ function CreateProductWithVariants() {
         iva: templateRow.iva || "13",
         codigoCabys: templateRow.codigoCabys || "",
         gender: templateRow.gender || "unisex",
-        tags: templateRow.tags ? templateRow.tags.join(", ") : "",
-        searchTags: templateRow.searchTags ? templateRow.searchTags.join(", ") : "",
+        tags: templateRow.tags ? templateRow.tags.filter(t => t && t !== "[]" && t.trim() !== "").join(", ") : "",
+        searchTags: templateRow.searchTags ? templateRow.searchTags.filter(t => t && t !== "[]" && t.trim() !== "").join(", ") : "",
         resellerPrices: templateRow.resellerPrices
           ? { ...templateRow.resellerPrices }
           : { cat1: 0, cat2: 0, cat3: 0, cat4: 0, cat5: 0 },
@@ -358,9 +358,9 @@ function CreateProductWithVariants() {
         ...baseProduct,
         tags: baseProduct.tags
           ? baseProduct.tags
-              .split(",")
-              .map((t) => t.trim())
-              .filter(Boolean)
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean)
           : [],
       },
       variants: variants.map((v) => ({
@@ -686,9 +686,8 @@ function CreateProductWithVariants() {
                     defaultExpanded={index === 0}
                     sx={(theme) => ({
                       mb: 1,
-                      backgroundColor: `${
-                        theme.palette.background.card || theme.palette.background.default
-                      } !important`,
+                      backgroundColor: `${theme.palette.background.card || theme.palette.background.default
+                        } !important`,
                       backgroundImage: "none !important",
                       border: "1px solid",
                       borderColor: "divider",
