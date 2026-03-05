@@ -393,17 +393,26 @@ function EditProduct() {
         // Enviar arrays siempre como JSON string, para que backend pueda diferenciarlos y aceptar arrays vacíos
         formData.append(key, JSON.stringify(productData[key]));
       } else if (key === "tags") {
-        productData.tags
-          .split(",")
-          .map((t) => t.trim())
-          .filter((t) => t)
-          .forEach((t) => formData.append("tags", t));
+        if (productData.tags && productData.tags.trim() !== "") {
+          productData.tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter((t) => t)
+            .forEach((t) => formData.append("tags", t));
+        } else {
+          formData.append("tags", "[]");
+        }
       } else if (key === "searchTags") {
-        productData.searchTags
-          .split(",")
-          .map((t) => t.trim())
-          .filter((t) => t)
-          .forEach((t) => formData.append("searchTags", t));
+        if (productData.searchTags && productData.searchTags.trim() !== "") {
+          productData.searchTags
+            .split(",")
+            .map((t) => t.trim())
+            .filter((t) => t)
+            .forEach((t) => formData.append("searchTags", t));
+        } else {
+          // Send an empty JSON array explicitly if the user cleared the tags so the backend wipes them
+          formData.append("searchTags", "[]");
+        }
       } else {
         formData.append(key, productData[key]);
       }
