@@ -777,11 +777,41 @@ function ProductDetail() {
                         mb={1}
                         display="block"
                       >
-                        Etiquetas Búsqueda (Tags)
+                        Notas Aromáticas
                       </MDTypography>
                       <MDBox display="flex" flexWrap="wrap" gap={1}>
                         {product.tags && product.tags.length > 0 ? (
                           product.tags.map((t, i) => (
+                            <Chip
+                              key={i}
+                              label={t}
+                              size="small"
+                              variant="outlined"
+                              sx={{ borderColor: "grey.400", color: "grey.700" }}
+                            />
+                          ))
+                        ) : (
+                          <MDTypography variant="body2" color="text">
+                            N/A
+                          </MDTypography>
+                        )}
+                      </MDBox>
+                    </MDBox>
+
+                    <MDBox>
+                      <MDTypography
+                        variant="caption"
+                        color="text"
+                        fontWeight="medium"
+                        textTransform="uppercase"
+                        mb={1}
+                        display="block"
+                      >
+                        Etiquetas Búsqueda (Tags)
+                      </MDTypography>
+                      <MDBox display="flex" flexWrap="wrap" gap={1}>
+                        {product.searchTags && product.searchTags.length > 0 ? (
+                          product.searchTags.map((t, i) => (
                             <Chip
                               key={i}
                               label={t}
