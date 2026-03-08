@@ -8,10 +8,10 @@ import MDInput from "components/MDInput";
 import MDButton from "components/MDButton";
 
 // Context
-import { useAdGrid2 } from "contexts/AdGrid2Context";
+import { useAdGrid4 } from "contexts/AdGrid4Context";
 
 function SlideForm({ itemToEdit, onCancel, onSuccess }) {
-  const { createGridItem, updateGridItem, loading: contextLoading, error } = useAdGrid2();
+  const { createGridItem, updateGridItem, loading: contextLoading, error } = useAdGrid4();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -59,15 +59,9 @@ function SlideForm({ itemToEdit, onCancel, onSuccess }) {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file type
-      if (!file.type.startsWith("image/")) {
-        alert("Por favor selecciona un archivo de imagen válido");
-        return;
-      }
-
-      // Validate file size (5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert("La imagen no debe exceder los 5MB");
+      // Validate file size (50MB to match backend)
+      if (file.size > 50 * 1024 * 1024) {
+        alert("El archivo no debe exceder los 50MB");
         return;
       }
 
@@ -123,7 +117,7 @@ function SlideForm({ itemToEdit, onCancel, onSuccess }) {
       sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2 }}
     >
       <MDTypography variant="h5" fontWeight="medium" mb={3}>
-        {itemToEdit ? "Editar Item del Grid" : "Nuevo Item del Grid"}
+        {itemToEdit ? "Editar Item del Grid 4" : "Nuevo Item del Grid 4"}
       </MDTypography>
 
       {error && (
@@ -144,23 +138,41 @@ function SlideForm({ itemToEdit, onCancel, onSuccess }) {
         </MDTypography>
         <input
           type="file"
-          accept="image/*"
+          accept="image/*,video/*,audio/*"
           onChange={handleImageChange}
           style={{ marginTop: "8px" }}
           required={!itemToEdit}
         />
         {imagePreview && (
           <MDBox mt={1}>
-            <img
-              src={imagePreview}
-              alt="Preview"
-              style={{
-                maxWidth: "200px",
-                maxHeight: "150px",
-                borderRadius: "8px",
-                border: "1px solid #e0e0e0",
-              }}
-            />
+            {imagePreview.includes("data:video/") ||
+            (itemToEdit?.image &&
+              itemToEdit.image.match(/\.(mp4|webm|ogg|mov|avi|flv|wmv|mpg|mpeg)$/i)) ? (
+              <video
+                src={imagePreview}
+                controls
+                style={{
+                  maxWidth: "300px",
+                  maxHeight: "200px",
+                  borderRadius: "8px",
+                  border: "1px solid #e0e0e0",
+                }}
+              />
+            ) : imagePreview.includes("data:audio/") ||
+              (itemToEdit?.image && itemToEdit.image.match(/\.(mp3|wav|m4a|aac)$/i)) ? (
+              <audio src={imagePreview} controls style={{ width: "300px" }} />
+            ) : (
+              <img
+                src={imagePreview}
+                alt="Preview"
+                style={{
+                  maxWidth: "200px",
+                  maxHeight: "150px",
+                  borderRadius: "8px",
+                  border: "1px solid #e0e0e0",
+                }}
+              />
+            )}
           </MDBox>
         )}
       </MDBox>
@@ -218,12 +230,12 @@ function SlideForm({ itemToEdit, onCancel, onSuccess }) {
         <MDInput
           fullWidth
           type="number"
-          label="Orden"
+          label="Orden (0, 1 o 2)"
           name="order"
           value={formData.order}
           onChange={handleInputChange}
           disabled={formLoading}
-          inputProps={{ min: 0, max: 1 }}
+          inputProps={{ min: 0, max: 2 }}
         />
       </MDBox>
 

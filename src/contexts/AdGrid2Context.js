@@ -105,6 +105,7 @@ export const AdGrid2Provider = ({ children }) => {
       setError(null);
       try {
         const formData = new FormData();
+        formData.append("title", itemData.title);
         formData.append("buttonText", itemData.buttonText);
         formData.append("buttonLink", itemData.buttonLink);
         formData.append("alt", itemData.alt || itemData.buttonText);
@@ -151,6 +152,7 @@ export const AdGrid2Provider = ({ children }) => {
       setError(null);
       try {
         const formData = new FormData();
+        formData.append("title", itemData.title);
         formData.append("buttonText", itemData.buttonText);
         formData.append("buttonLink", itemData.buttonLink);
         formData.append("alt", itemData.alt);

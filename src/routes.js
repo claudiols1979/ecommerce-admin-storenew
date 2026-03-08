@@ -21,6 +21,7 @@ import HeroCarousel from "layouts/herocarousel";
 import AdGridSystem from "layouts/adgridsystem";
 import AdGridSystem2 from "layouts/adgridsystem2";
 import AdGridSystem3 from "layouts/adgridsystem3";
+import AdGridSystem4 from "layouts/adgridsystem4";
 import HeroVideoCarousel from "layouts/herovideocarousel";
 import Resellers from "layouts/resellers";
 import ChatAnalytics from "layouts/chat-analytics";
@@ -141,12 +142,21 @@ const routes = [
   },
   {
     type: "collapse",
+    name: "Grid Promocional 4",
+    key: "AdGridSystem4",
+    icon: <Icon fontSize="small">dashboard_customize</Icon>,
+    route: "/ad-grid-4",
+    component: <AdGridSystem4 />,
+    allowedRoles: ["Administrador", "Editor"],
+  },
+  {
+    type: "collapse",
     name: "HeroVideoCarousel",
     key: "HeroVideoCarousel",
-    icon: <Icon fontSize="small">video_camera_back_add</Icon>, // Using shopping_cart icon for orders
+    icon: <Icon fontSize="small">video_camera_back_add</Icon>,
     route: "/herovideocarousel",
     component: <HeroVideoCarousel />,
-    allowedRoles: ["Administrador", "Editor", "ReVendedor"], // Assuming all authenticated users can view orders initially
+    allowedRoles: ["Administrador", "Editor", "ReVendedor"],
   },
   {
     type: "hidden", // Hidden from Sidenav

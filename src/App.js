@@ -42,6 +42,7 @@ import { HeroCarouselProvider } from "contexts/HeroCarouselContext";
 import { AdGridProvider } from "contexts/AdGridContext";
 import { AdGrid2Provider } from "contexts/AdGrid2Context";
 import { AdGrid3Provider } from "contexts/AdGrid3Context";
+import { AdGrid4Provider } from "contexts/AdGrid4Context";
 import { VideoProvider } from "contexts/VideoContext";
 import { ConfigProvider } from "contexts/ConfigContext";
 
@@ -66,6 +67,7 @@ import HeroCarousel from "layouts/herocarousel";
 import AdGridSystem from "layouts/adgridsystem";
 import AdGridSystem2 from "layouts/adgridsystem2";
 import AdGridSystem3 from "layouts/adgridsystem3";
+import AdGridSystem4 from "layouts/adgridsystem4";
 import HeroVideoCarousel from "layouts/herovideocarousel";
 import CreateOrder from "layouts/orders/templates/CreateOrder";
 import EditOrder from "layouts/orders/templates/EditOrder";
@@ -371,6 +373,14 @@ function MainAppContent() {
                   }
                 />
                 <Route
+                  path="/ad-grid-4"
+                  element={
+                    <ProtectedRoute allowedRoles={["Administrador", "Editor", "Revendedor"]}>
+                      <AdGridSystem4 />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="/herovideocarousel"
                   element={
                     <ProtectedRoute allowedRoles={["Administrador", "Editor", "Revendedor"]}>
@@ -455,9 +465,11 @@ export default function App() {
                   <AdGridProvider>
                     <AdGrid2Provider>
                       <AdGrid3Provider>
-                        <VideoProvider>
-                          <MainAppContent />
-                        </VideoProvider>
+                        <AdGrid4Provider>
+                          <VideoProvider>
+                            <MainAppContent />
+                          </VideoProvider>
+                        </AdGrid4Provider>
                       </AdGrid3Provider>
                     </AdGrid2Provider>
                   </AdGridProvider>

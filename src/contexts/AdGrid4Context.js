@@ -5,11 +5,11 @@ import axios from "axios";
 import { useAuth } from "./AuthContext";
 import API_URL from "../config";
 
-const AdGrid3Context = createContext();
+const AdGrid4Context = createContext();
 
-export const useAdGrid3 = () => useContext(AdGrid3Context);
+export const useAdGrid4 = () => useContext(AdGrid4Context);
 
-export const AdGrid3Provider = ({ children }) => {
+export const AdGrid4Provider = ({ children }) => {
   const { user } = useAuth();
   const authToken = user?.token;
 
@@ -28,7 +28,7 @@ export const AdGrid3Provider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await axios.get(`${API_URL}/api/ad-grid-3/public`);
+      const { data } = await axios.get(`${API_URL}/api/ad-grid-4/public`);
       setGridItems(data);
       return data;
     } catch (err) {
@@ -52,7 +52,7 @@ export const AdGrid3Provider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await axios.get(`${API_URL}/api/ad-grid-3`, config);
+      const { data } = await axios.get(`${API_URL}/api/ad-grid-4`, config);
       setGridItems(data);
       return data;
     } catch (err) {
@@ -77,7 +77,7 @@ export const AdGrid3Provider = ({ children }) => {
       setLoading(true);
       setError(null);
       try {
-        const { data } = await axios.get(`${API_URL}/api/ad-grid-3/${id}`, config);
+        const { data } = await axios.get(`${API_URL}/api/ad-grid-4/${id}`, config);
         setCurrentItem(data);
         return data;
       } catch (err) {
@@ -116,7 +116,7 @@ export const AdGrid3Provider = ({ children }) => {
           formData.append("image", imageFile);
         }
 
-        const { data } = await axios.post(`${API_URL}/api/ad-grid-3`, formData, {
+        const { data } = await axios.post(`${API_URL}/api/ad-grid-4`, formData, {
           ...config,
           headers: {
             ...config.headers,
@@ -163,7 +163,7 @@ export const AdGrid3Provider = ({ children }) => {
           formData.append("image", imageFile);
         }
 
-        const { data } = await axios.put(`${API_URL}/api/ad-grid-3/${id}`, formData, {
+        const { data } = await axios.put(`${API_URL}/api/ad-grid-4/${id}`, formData, {
           ...config,
           headers: {
             ...config.headers,
@@ -202,7 +202,7 @@ export const AdGrid3Provider = ({ children }) => {
       setLoading(true);
       setError(null);
       try {
-        await axios.delete(`${API_URL}/api/ad-grid-3/${id}`, config);
+        await axios.delete(`${API_URL}/api/ad-grid-4/${id}`, config);
         setGridItems((prev) => prev.filter((item) => item._id !== id));
         if (currentItem && currentItem._id === id) {
           setCurrentItem(null);
@@ -233,7 +233,7 @@ export const AdGrid3Provider = ({ children }) => {
       setError(null);
       try {
         const { data } = await axios.put(
-          `${API_URL}/api/ad-grid-3/reorder/reorder`,
+          `${API_URL}/api/ad-grid-4/reorder/reorder`,
           {
             items: itemsOrder,
           },
@@ -268,7 +268,7 @@ export const AdGrid3Provider = ({ children }) => {
       setError(null);
       try {
         const { data } = await axios.put(
-          `${API_URL}/api/ad-grid-3/${id}`,
+          `${API_URL}/api/ad-grid-4/${id}`,
           {
             isActive: !isActive,
           },
@@ -303,7 +303,7 @@ export const AdGrid3Provider = ({ children }) => {
       setError(null);
       try {
         const { data } = await axios.put(
-          `${API_URL}/api/ad-grid-3/bulk/status`,
+          `${API_URL}/api/ad-grid-4/bulk/status`,
           {
             ids,
             isActive,
@@ -370,9 +370,9 @@ export const AdGrid3Provider = ({ children }) => {
     clearError,
   };
 
-  return <AdGrid3Context.Provider value={value}>{children}</AdGrid3Context.Provider>;
+  return <AdGrid4Context.Provider value={value}>{children}</AdGrid4Context.Provider>;
 };
 
-AdGrid3Provider.propTypes = {
+AdGrid4Provider.propTypes = {
   children: PropTypes.node.isRequired,
 };

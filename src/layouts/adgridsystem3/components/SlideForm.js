@@ -198,7 +198,7 @@ function SlideForm({ itemToEdit, onCancel, onSuccess }) {
           onChange={handleInputChange}
           required
           disabled={formLoading}
-          placeholder="/products o /products?category=algo"
+          placeholder="/products?department=Belleza&brand=NEVADA&category=Cuidado de la Piel"
         />
       </MDBox>
 
