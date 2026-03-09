@@ -24,7 +24,8 @@ function SlideForm({ slide, onClose, onSuccess }) {
   });
 
   const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState("");
+  const [videoFile, setVideoFile] = useState(null);
+  const [mediaPreview, setMediaPreview] = useState({ url: "", type: "" });
   const [formLoading, setFormLoading] = useState(false); // Local loading state
 
   useEffect(() => {
@@ -38,7 +39,12 @@ function SlideForm({ slide, onClose, onSuccess }) {
         order: slide.order || 0,
         isActive: slide.isActive !== undefined ? slide.isActive : true,
       });
-      setImagePreview(slide.image || "");
+
+      if (slide.video) {
+        setMediaPreview({ url: slide.video, type: "video" });
+      } else {
+        setMediaPreview({ url: slide.image || "", type: "image" });
+      }
     }
   }, [slide]);
 
@@ -50,13 +56,24 @@ function SlideForm({ slide, onClose, onSuccess }) {
     }));
   };
 
-  const handleImageChange = (e) => {
+  const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setImageFile(file);
+      const isVideo = file.type.startsWith("video/");
+      if (isVideo) {
+        setVideoFile(file);
+        setImageFile(null);
+      } else {
+        setImageFile(file);
+        setVideoFile(null);
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result);
+        setMediaPreview({
+          url: reader.result,
+          type: isVideo ? "video" : "image",
+        });
       };
       reader.readAsDataURL(file);
     }
@@ -71,18 +88,19 @@ function SlideForm({ slide, onClose, onSuccess }) {
       return;
     }
 
-    if (!slide && !imageFile) {
-      alert("Por favor selecciona una imagen para el slide");
+    if (!slide && !imageFile && !videoFile) {
+      alert("Por favor selecciona una imagen o video para el slide");
       return;
     }
 
     setFormLoading(true);
 
     try {
+      const mediaFile = imageFile || videoFile;
       if (slide) {
-        await updateSlide(slide._id, formData, imageFile);
+        await updateSlide(slide._id, formData, mediaFile);
       } else {
-        await createSlide(formData, imageFile);
+        await createSlide(formData, mediaFile);
       }
       onSuccess();
     } catch (error) {
@@ -118,27 +136,40 @@ function SlideForm({ slide, onClose, onSuccess }) {
 
       <MDBox mb={2}>
         <MDTypography variant="button" fontWeight="medium">
-          Subir Imágen {!slide && "*"}
+          Subir Imágen o Video {!slide && "*"}
         </MDTypography>
         <input
           type="file"
-          accept="image/*"
-          onChange={handleImageChange}
+          accept="image/*,video/*"
+          onChange={handleFileChange}
           style={{ marginTop: "8px" }}
           required={!slide} // Required only for new slides
         />
-        {imagePreview && (
+        {mediaPreview.url && (
           <MDBox mt={1}>
-            <img
-              src={imagePreview}
-              alt="Preview"
-              style={{
-                maxWidth: "200px",
-                maxHeight: "150px",
-                borderRadius: "8px",
-                border: "1px solid #e0e0e0",
-              }}
-            />
+            {mediaPreview.type === "video" ? (
+              <video
+                src={mediaPreview.url}
+                controls
+                style={{
+                  maxWidth: "300px",
+                  maxHeight: "200px",
+                  borderRadius: "8px",
+                  border: "1px solid #e0e0e0",
+                }}
+              />
+            ) : (
+              <img
+                src={mediaPreview.url}
+                alt="Preview"
+                style={{
+                  maxWidth: "200px",
+                  maxHeight: "150px",
+                  borderRadius: "8px",
+                  border: "1px solid #e0e0e0",
+                }}
+              />
+            )}
           </MDBox>
         )}
       </MDBox>
