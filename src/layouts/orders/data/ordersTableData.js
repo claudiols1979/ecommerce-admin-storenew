@@ -78,7 +78,7 @@ const StatusBadge = ({ status }) => {
 };
 
 // Main ordersTableData function now accepts 'orders', 'currentUser', and 'onStatusChange' as props
-export default function ordersTableData(orders, currentUser, onStatusChange) {
+export default function ordersTableData(orders, currentUser, onStatusChange, globalTaxRegime) {
   const columns = [
     { Header: "ID de Pedido", accessor: "orderId", width: "15%", align: "left" },
     { Header: "Revendedor", accessor: "reseller", width: "15%", align: "left" },
@@ -107,6 +107,16 @@ export default function ordersTableData(orders, currentUser, onStatusChange) {
           <MDTypography variant="caption" fontWeight="medium" color="text">
             {order.orderNumber || order._id}
           </MDTypography>
+          {globalTaxRegime === "simplified" && order.user?.wantsFacturaElectronica && (
+            <Icon
+              fontSize="small"
+              color="error"
+              title="Requiere Factura Manual"
+              sx={{ ml: 1, verticalAlign: "middle" }}
+            >
+              receipt_long
+            </Icon>
+          )}
         </Link>
       ),
       reseller: (

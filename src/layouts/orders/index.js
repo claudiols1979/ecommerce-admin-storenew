@@ -42,10 +42,12 @@ import ordersTableData from "./data/ordersTableData";
 // Contexts
 import { useAuth } from "contexts/AuthContext";
 import { useOrders } from "contexts/OrderContext";
+import { useConfig } from "contexts/ConfigContext";
 import { useMaterialUIController } from "context";
 
 function Orders() {
   const { user } = useAuth();
+  const { taxRegime: globalTaxRegime } = useConfig();
   const [controller] = useMaterialUIController();
   const { darkMode } = controller;
   const {
@@ -181,8 +183,8 @@ function Orders() {
   );
 
   const { columns, rows } = useMemo(
-    () => ordersTableData(orders, user, handleStatusChange),
-    [orders, user, handleStatusChange]
+    () => ordersTableData(orders, user, handleStatusChange, globalTaxRegime),
+    [orders, user, handleStatusChange, globalTaxRegime]
   );
 
   if (loading && orders.length === 0) {

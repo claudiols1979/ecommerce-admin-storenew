@@ -14,6 +14,7 @@ import MenuItem from "@mui/material/MenuItem";
 import InputLabel from "@mui/material/InputLabel";
 import FormControl from "@mui/material/FormControl";
 import IconButton from "@mui/material/IconButton";
+import Icon from "@mui/material/Icon";
 import { useTheme, useMediaQuery } from "@mui/material";
 
 // Material Dashboard 2 React components
@@ -579,6 +580,51 @@ function EditOrder() {
                       Estado del Pedido: {statusTranslations[currentStatus]}
                     </MDTypography>
                   </Grid>
+
+                  {/* ✅ ALERTA DE FACTURACIÓN MANUAL (Régimen Simplificado + Solicitud de Factura) */}
+                  {orderTaxRegime === "simplified" && order.user?.wantsFacturaElectronica && (
+                    <Grid item xs={12}>
+                      <MDBox
+                        variant="gradient"
+                        bgColor="error"
+                        color="white"
+                        borderRadius="lg"
+                        shadow="md"
+                        p={2}
+                        mb={2}
+                        display="flex"
+                        flexDirection="column"
+                      >
+                        <MDBox display="flex" alignItems="center">
+                          <Icon fontSize="medium" sx={{ mr: 1 }}>
+                            warning
+                          </Icon>
+                          <MDTypography variant="h6" color="white" fontWeight="bold">
+                            ATENCIÓN: Facturación Manual Requerida
+                          </MDTypography>
+                        </MDBox>
+                        <MDTypography variant="button" color="white" mt={1}>
+                          El cliente ha solicitado una **Factura Electrónica** para crédito fiscal.
+                          Dado que la tienda opera bajo el **Régimen Simplificado**, el sistema no
+                          puede emitir este documento automáticamente hacia Hacienda.
+                        </MDTypography>
+                        <MDTypography variant="button" color="white" fontWeight="bold" mt={1}>
+                          Por favor, emita la factura manualmente en su sistema externo si aplica.
+                        </MDTypography>
+                        {order.user?.cedula && (
+                          <MDTypography
+                            variant="caption"
+                            color="white"
+                            mt={1}
+                            sx={{ opacity: 0.9 }}
+                          >
+                            Cédula del cliente: {order.user.cedula} ({order.user.tipoIdentificacion}
+                            )
+                          </MDTypography>
+                        )}
+                      </MDBox>
+                    </Grid>
+                  )}
 
                   <Grid item xs={12} md={6}>
                     <FormControl fullWidth variant="outlined">
