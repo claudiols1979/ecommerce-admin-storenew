@@ -283,6 +283,7 @@ SlideForm.propTypes = {
     order: PropTypes.number,
     isActive: PropTypes.bool,
     image: PropTypes.string,
+    video: PropTypes.string,
   }),
   onClose: PropTypes.func.isRequired,
   onSuccess: PropTypes.func.isRequired,
