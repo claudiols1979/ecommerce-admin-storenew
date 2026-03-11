@@ -417,15 +417,40 @@ function CreateProduct() {
                 mx={2}
                 mt={-3}
                 py={3}
-                px={2}
+                px={3}
                 variant="gradient"
                 bgColor="info"
                 borderRadius="lg"
                 coloredShadow="info"
+                display="flex"
+                flexDirection={{ xs: "column", sm: "row" }}
+                justifyContent="space-between"
+                alignItems={{ xs: "flex-start", sm: "center" }}
+                gap={2}
               >
                 <MDTypography variant="h6" color="white">
                   Crear Nuevo Producto
                 </MDTypography>
+                <MDBox display="flex" width={{ xs: "100%", sm: "auto" }} gap={1}>
+                  <MDButton
+                    variant="outlined"
+                    color="white"
+                    size="small"
+                    onClick={() => navigate("/products")}
+                    sx={{ flex: { xs: 1, sm: "initial" } }}
+                  >
+                    Cancelar
+                  </MDButton>
+                  <MDButton
+                    variant="contained"
+                    color="white"
+                    size="small"
+                    onClick={handleSubmit}
+                    sx={{ flex: { xs: 1, sm: "initial" } }}
+                  >
+                    Crear Producto
+                  </MDButton>
+                </MDBox>
               </MDBox>
               <MDBox p={3} component="form" onSubmit={handleSubmit}>
                 <Grid container spacing={3}>

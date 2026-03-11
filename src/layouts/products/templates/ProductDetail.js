@@ -41,19 +41,54 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import BrandingWatermarkIcon from "@mui/icons-material/BrandingWatermark";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 
-const HTMLContent = ({ html, fallback = "No description available.", ...typographyProps }) => {
+const HTMLContent = ({ html, fallback = "No description available.", sx, ...typographyProps }) => {
   const createMarkup = (htmlContent) => ({ __html: DOMPurify.sanitize(htmlContent || "") });
 
   if (!html || html.trim() === "") {
-    return <MDTypography {...typographyProps}>{fallback}</MDTypography>;
+    return (
+      <MDTypography {...typographyProps} sx={sx}>
+        {fallback}
+      </MDTypography>
+    );
   }
 
-  return <MDTypography {...typographyProps} dangerouslySetInnerHTML={createMarkup(html)} />;
+  return (
+    <MDBox
+      sx={{
+        width: "100%",
+        maxWidth: "100% !important",
+        overflow: "hidden",
+        "& img": {
+          maxWidth: "100% !important",
+          height: "auto !important",
+          width: "auto !important", // Handle case where width might be set to fixed value
+          display: "block",
+          margin: "0 auto",
+        },
+        "& *": {
+          maxWidth: "100% !important",
+          boxSizing: "border-box !important",
+          overflowWrap: "break-word",
+        },
+        ...sx,
+      }}
+    >
+      <div
+        dangerouslySetInnerHTML={createMarkup(html)}
+        style={{
+          width: "100%",
+          maxWidth: "100%",
+          lineHeight: "inherit",
+        }}
+      />
+    </MDBox>
+  );
 };
 
 HTMLContent.propTypes = {
   html: PropTypes.string,
   fallback: PropTypes.string,
+  sx: PropTypes.object,
 };
 
 function ProductDetail() {
@@ -177,11 +212,16 @@ function ProductDetail() {
       <MDBox color="text" mr={1.5} mt={0.2} display="flex" alignItems="center">
         {IconComponent && <IconComponent fontSize="small" color="inherit" />}
       </MDBox>
-      <MDBox>
+      <MDBox sx={{ maxWidth: "calc(100% - 32px)", overflow: "hidden" }}>
         <MDTypography variant="caption" color="text" fontWeight="medium" textTransform="uppercase">
           {label}
         </MDTypography>
-        <MDTypography variant="body2" color="dark" fontWeight="bold">
+        <MDTypography
+          variant="body2"
+          color="dark"
+          fontWeight="bold"
+          sx={{ overflowWrap: "break-word", wordBreak: "break-word" }}
+        >
           {value}
         </MDTypography>
       </MDBox>
@@ -210,8 +250,10 @@ function ProductDetail() {
             borderRadius="lg"
             coloredShadow="info"
             display="flex"
+            flexDirection={{ xs: "column", sm: "row" }}
             justifyContent="space-between"
-            alignItems="center"
+            alignItems={{ xs: "flex-start", sm: "center" }}
+            gap={2}
           >
             <MDBox>
               <MDTypography variant="h5" color="white" fontWeight="bold">
@@ -221,12 +263,12 @@ function ProductDetail() {
                 {product.code}
               </MDTypography>
             </MDBox>
-            <MDBox display="flex" alignItems="center">
+            <MDBox display="flex" alignItems="center" width={{ xs: "100%", sm: "auto" }}>
               <MDButton
                 onClick={() => navigate("/products")}
                 variant="outlined"
                 color="white"
-                sx={{ mr: 1 }}
+                sx={{ mr: 1, flex: { xs: 1, sm: "initial" } }}
               >
                 Volver
               </MDButton>
@@ -234,6 +276,7 @@ function ProductDetail() {
                 onClick={() => navigate(`/products/edit/${product._id}`)}
                 variant="contained"
                 color="white"
+                sx={{ flex: { xs: 1, sm: "initial" } }}
               >
                 Editar
               </MDButton>
@@ -249,16 +292,17 @@ function ProductDetail() {
             <Card
               sx={{
                 mb: 3,
-                p: 2,
-                height: "100%",
-                maxHeight: "500px",
+                p: { xs: 1, sm: 2 },
+                height: "auto",
                 display: "flex",
                 flexDirection: "column",
+                overflow: "hidden",
+                width: "100%", // Explicitly set width to avoid stretching
               }}
             >
               <MDBox
                 position="relative"
-                flex={1}
+                width="100%"
                 sx={{
                   display: "flex",
                   alignItems: "center",
@@ -266,6 +310,9 @@ function ProductDetail() {
                   borderRadius: "lg",
                   overflow: "hidden",
                   bgcolor: "grey.100",
+                  aspectRatio: { xs: "1/1", sm: "4/5", lg: "1/1" },
+                  maxHeight: { xs: "70vh", lg: "500px" },
+                  maxWidth: "100%", // Prevent horizontal overflow
                 }}
               >
                 {product.imageUrls && product.imageUrls.length > 0 ? (
@@ -275,9 +322,12 @@ function ProductDetail() {
                       src={product.imageUrls[currentImageIndex]?.secure_url}
                       alt={product.name}
                       sx={{
-                        width: "100%",
-                        height: "100%",
+                        maxWidth: "100%",
+                        maxHeight: "100%",
+                        width: "auto",
+                        height: "auto",
                         objectFit: "contain",
+                        display: "block",
                       }}
                     />
                     {product.imageUrls.length > 1 && (
@@ -532,7 +582,7 @@ function ProductDetail() {
 
                   <Grid container spacing={2}>
                     {["cat1", "cat2", "cat3", "cat4", "cat5"].map((cat) => (
-                      <Grid item xs={6} sm={4} md={2.4} key={cat}>
+                      <Grid item xs={12} sm={6} md={4} lg={2.4} key={cat}>
                         <MDBox
                           p={2}
                           borderRadius="lg"
@@ -835,7 +885,7 @@ function ProductDetail() {
 
           {/* BOTTOM ROW - Descriptions */}
           <Grid item xs={12}>
-            <Card sx={{ p: 3 }}>
+            <Card sx={{ p: { xs: 2, sm: 3 }, overflow: "hidden" }}>
               <MDTypography variant="h6" fontWeight="medium" mb={2}>
                 Descripción Detallada
               </MDTypography>
@@ -847,9 +897,32 @@ function ProductDetail() {
                 color="text"
                 sx={{
                   lineHeight: 1.8,
+                  fontSize: { xs: "0.875rem", sm: "1rem" },
                   "& p": { mb: 2 },
                   "& ul, & ol": { ml: 3, mb: 2 },
                   "& li": { mb: 0.5 },
+                  "& img": {
+                    width: "auto !important",
+                    maxWidth: "100% !important",
+                    height: "auto !important",
+                    display: "block",
+                    margin: "1rem auto",
+                    borderRadius: "8px",
+                    objectFit: "contain",
+                  },
+                  "& iframe": {
+                    width: "100% !important",
+                    aspectRatio: "16/9",
+                    height: "auto !important",
+                    borderRadius: "8px",
+                    border: "none",
+                  },
+                  "& table": {
+                    width: "100% !important",
+                    overflowX: "auto",
+                    display: "block",
+                    borderCollapse: "collapse",
+                  },
                 }}
               />
             </Card>

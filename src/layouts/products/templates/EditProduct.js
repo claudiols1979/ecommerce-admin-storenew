@@ -496,15 +496,40 @@ function EditProduct() {
                 mx={2}
                 mt={-3}
                 py={3}
-                px={2}
+                px={3}
                 variant="gradient"
                 bgColor="info"
                 borderRadius="lg"
                 coloredShadow="info"
+                display="flex"
+                flexDirection={{ xs: "column", sm: "row" }}
+                justifyContent="space-between"
+                alignItems={{ xs: "flex-start", sm: "center" }}
+                gap={2}
               >
                 <MDTypography variant="h6" color="white">
                   Editar Producto
                 </MDTypography>
+                <MDBox display="flex" width={{ xs: "100%", sm: "auto" }} gap={1}>
+                  <MDButton
+                    variant="outlined"
+                    color="white"
+                    size="small"
+                    onClick={() => navigate("/products")}
+                    sx={{ flex: { xs: 1, sm: "initial" } }}
+                  >
+                    Cancelar
+                  </MDButton>
+                  <MDButton
+                    variant="contained"
+                    color="white"
+                    size="small"
+                    onClick={handleSubmit}
+                    sx={{ flex: { xs: 1, sm: "initial" } }}
+                  >
+                    Guardar Cambios
+                  </MDButton>
+                </MDBox>
               </MDBox>
               <MDBox p={3} component="form" onSubmit={handleSubmit}>
                 <Grid container spacing={3}>
@@ -658,6 +683,19 @@ function EditProduct() {
                       helperText={formErrors.codigoCabys}
                     />
                   </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <MDInput
+                      label="Costo del Producto (Opcional)"
+                      name="cost"
+                      type="number"
+                      value={productData.cost}
+                      onChange={handleChange}
+                      fullWidth
+                      error={!!formErrors.cost}
+                      helperText={formErrors.cost}
+                      inputProps={{ min: 0, step: "0.01" }}
+                    />
+                  </Grid>
                   {/* <Grid item xs={12} sm={6}>
                     <MDInput
                       label="Volumen"
@@ -688,7 +726,7 @@ function EditProduct() {
                       ))}
                     </MDInput>
                   </Grid> */}
-                  <Grid item xs={12} sm={6} mb={2}>
+                  <Grid item xs={12} sm={6}>
                     <MDInput
                       label="Notas aromáticas (separadas por coma)"
                       name="tags"
@@ -697,7 +735,7 @@ function EditProduct() {
                       fullWidth
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} mb={2}>
+                  <Grid item xs={12} sm={6}>
                     <MDInput
                       label="Etiquetas Búsqueda (opcional, separadas por coma)"
                       name="searchTags"
@@ -707,7 +745,7 @@ function EditProduct() {
                       placeholder="ej: pantalon, men, rebajas"
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} mt={-5}>
+                  <Grid item xs={12} sm={6}>
                     <MDTypography variant="caption" color="text" fontWeight="bold">
                       Cantidad en Inventario
                     </MDTypography>
@@ -759,19 +797,6 @@ function EditProduct() {
                         inputProps={{ min: 0, step: "1" }}
                       />
                     )}
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <MDInput
-                      label="Costo del Producto (Opcional)"
-                      name="cost"
-                      type="number"
-                      value={productData.cost}
-                      onChange={handleChange}
-                      fullWidth
-                      error={!!formErrors.cost}
-                      helperText={formErrors.cost}
-                      inputProps={{ min: 0, step: "0.01" }}
-                    />
                   </Grid>
 
                   <Grid item xs={12}>
