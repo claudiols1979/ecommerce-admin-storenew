@@ -159,7 +159,9 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
   return (
     <SidenavRoot
       {...rest}
-      variant="permanent"
+      variant={window.innerWidth < 1200 ? "temporary" : "permanent"}
+      open={window.innerWidth < 1200 ? !miniSidenav : true}
+      onClose={closeSidenav}
       ownerState={{ transparentSidenav, whiteSidenav, miniSidenav, darkMode }}
     >
       <MDBox pt={3} pb={1} px={4} textAlign="center">

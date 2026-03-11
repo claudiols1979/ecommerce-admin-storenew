@@ -89,10 +89,6 @@ function MaterialUIControllerProvider({ children }) {
   const mergedState = {
     ...initialState,
     ...savedSettings,
-    darkMode: false,
-    transparentSidenav: false,
-    whiteSidenav: true,
-    fixedNavbar: false,
   };
 
   const [controller, dispatch] = useReducer(reducer, mergedState);
@@ -101,9 +97,7 @@ function MaterialUIControllerProvider({ children }) {
 
   // Save settings to localStorage whenever controller changes
   useEffect(() => {
-    // If user's cached settings had dark mode on accidentally, let's just wipe their config once.
-    // Uncomment this out after everyone is back to normal text.
-    // localStorage.setItem("material-ui-settings", JSON.stringify(controller));
+    localStorage.setItem("material-ui-settings", JSON.stringify(controller));
   }, [controller]);
 
   return <MaterialUI.Provider value={value}>{children}</MaterialUI.Provider>;
