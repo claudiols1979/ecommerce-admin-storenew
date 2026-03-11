@@ -26,6 +26,7 @@ import { useConfig } from "contexts/ConfigContext";
 
 // Components
 import FAQManager from "./components/FAQManager";
+import AdminEmailManager from "./components/AdminEmailManager";
 
 function Administration() {
   const { configs, updateConfig, loading, systemEnv, envLoading } = useConfig();
@@ -95,6 +96,7 @@ function Administration() {
                   <Tab label="Fiscal" />
                   <Tab label="Marketing" />
                   <Tab label="FAQ" />
+                  <Tab label="Notificaciones" />
                   <Tab label="Sistema" />
                 </Tabs>
 
@@ -192,8 +194,8 @@ function Administration() {
                       </MDButton>
                     </MDBox>
                   </MDBox>
-                ) : activeTab === 2 ? (
-                  <FAQManager />
+                ) : activeTab === 3 ? (
+                  <AdminEmailManager />
                 ) : (
                   <MDBox>
                     <MDTypography variant="h6" mb={2}>
