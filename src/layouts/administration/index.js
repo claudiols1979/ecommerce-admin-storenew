@@ -194,6 +194,8 @@ function Administration() {
                       </MDButton>
                     </MDBox>
                   </MDBox>
+                ) : activeTab === 2 ? (
+                  <FAQManager />
                 ) : activeTab === 3 ? (
                   <AdminEmailManager />
                 ) : (

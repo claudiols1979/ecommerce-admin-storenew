@@ -13,6 +13,7 @@ import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
 import MDInput from "components/MDInput";
+import MDConfirmationModal from "components/MDConfirmationModal";
 
 import { useAuth } from "contexts/AuthContext";
 import API_URL from "../../../config";
@@ -24,6 +25,12 @@ function AdminEmailManager() {
   const [emails, setEmails] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Modal State
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [emailToDelete, setEmailToDelete] = useState(null);
 
   // Form State
   const [newEmail, setNewEmail] = useState("");
@@ -47,6 +54,28 @@ function AdminEmailManager() {
   useEffect(() => {
     if (token) fetchEmails();
   }, [token]);
+
+  const handleTestNotification = async () => {
+    if (emails.filter((e) => e.isActive).length === 0) {
+      toast.warning("No hay correos activos para probar.");
+      return;
+    }
+
+    setIsTesting(true);
+    try {
+      const res = await axios.post(
+        `${API_URL}/api/admin-notifications/test`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success(res.data.message);
+    } catch (error) {
+      console.error("Error testing notifications:", error);
+      toast.error(error.response?.data?.message || "Error al enviar correo de prueba.");
+    } finally {
+      setIsTesting(false);
+    }
+  };
 
   const handleAddEmail = async (e) => {
     e.preventDefault();
@@ -84,17 +113,31 @@ function AdminEmailManager() {
     }
   };
 
-  const handleDeleteEmail = async (id) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este correo?")) return;
+  const handleOpenDeleteModal = (id) => {
+    setEmailToDelete(id);
+    setDeleteModalOpen(true);
+  };
 
+  const handleCloseDeleteModal = () => {
+    setDeleteModalOpen(false);
+    setEmailToDelete(null);
+  };
+
+  const handleDeleteEmail = async () => {
+    if (!emailToDelete) return;
+
+    setIsDeleting(true);
     try {
-      await axios.delete(`${API_URL}/api/admin-notifications/${id}`, {
+      await axios.delete(`${API_URL}/api/admin-notifications/${emailToDelete}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setEmails(emails.filter((e) => e._id !== id));
+      setEmails(emails.filter((e) => e._id !== emailToDelete));
       toast.success("Correo eliminado.");
+      handleCloseDeleteModal();
     } catch (error) {
       toast.error("Error al eliminar el correo.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -106,6 +149,18 @@ function AdminEmailManager() {
       <MDTypography variant="button" color="text" mb={3} display="block">
         Configura los correos que recibirán notificaciones cuando se realice un nuevo pedido.
       </MDTypography>
+
+      <MDBox display="flex" justifyContent="flex-end" mb={2}>
+        <MDButton
+          variant="outlined"
+          color="info"
+          size="small"
+          onClick={handleTestNotification}
+          disabled={isTesting || loading}
+        >
+          {isTesting ? <CircularProgress size={15} color="inherit" /> : "Probar Notificación"}
+        </MDButton>
+      </MDBox>
 
       <Card sx={{ p: 2, mb: 4, bgcolor: "#f8f9fa" }}>
         <MDBox component="form" onSubmit={handleAddEmail}>
@@ -172,7 +227,7 @@ function AdminEmailManager() {
                     onChange={() => handleToggleStatus(email._id, email.isActive)}
                     color="info"
                   />
-                  <IconButton color="error" onClick={() => handleDeleteEmail(email._id)}>
+                  <IconButton color="error" onClick={() => handleOpenDeleteModal(email._id)}>
                     <Icon>delete</Icon>
                   </IconButton>
                 </MDBox>
@@ -181,6 +236,17 @@ function AdminEmailManager() {
           ))}
         </MDBox>
       )}
+
+      <MDConfirmationModal
+        open={deleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleDeleteEmail}
+        loading={isDeleting}
+        title="Eliminar Correo"
+        content="¿Estás seguro de que deseas eliminar este correo de la lista de notificaciones? Esta acción no se puede deshacer."
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+      />
     </MDBox>
   );
 }
