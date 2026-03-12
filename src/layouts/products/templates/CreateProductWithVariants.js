@@ -54,6 +54,7 @@ const EMPTY_VARIANT = {
   materials: [],
   features: [],
   cost: 0, // NEW: Cost field
+  description: "", // NEW: Individual description
   resellerPrices: { cat1: 0, cat2: 0, cat3: 0, cat4: 0, cat5: 0 },
 };
 
@@ -253,6 +254,14 @@ function CreateProductWithVariants() {
     });
   };
 
+  const handleVariantDescriptionChange = (index, content) => {
+    setVariants((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], description: content };
+      return updated;
+    });
+  };
+
   const handleVariantPriceChange = (index, cat) => (e) => {
     setVariants((prev) => {
       const updated = [...prev];
@@ -377,6 +386,7 @@ function CreateProductWithVariants() {
         ...v,
         codeSuffix: getAutoSuffix(v), // Auto override just before saving
         name: getAutoName(v),
+        description: v.description || baseProduct.description, // Use variant description or fallback to base
         resellerPrices: v.resellerPrices?.cat1 ? v.resellerPrices : baseProduct.resellerPrices,
         cost: v.cost || baseProduct.cost || 0, // NEW: Use variant cost or fallback to base cost
         countInStock: parseInt(v.countInStock) || 0,
@@ -864,6 +874,75 @@ function CreateProductWithVariants() {
                             />
                           </Grid>
                         ))}
+
+                        {/* Descripción Individual de la Variante */}
+                        <Grid item xs={12} mt={2}>
+                          <MDBox display="flex" justifyContent="space-between" alignItems="center">
+                            <MDTypography variant="caption" color="text" fontWeight="bold">
+                              Descripción de la Variante (Opcional)
+                            </MDTypography>
+                            {baseProduct.description && (
+                              <MDButton
+                                variant="text"
+                                color="info"
+                                size="small"
+                                onClick={() =>
+                                  handleVariantDescriptionChange(index, baseProduct.description)
+                                }
+                              >
+                                <ContentCopyIcon sx={{ mr: 1 }} /> Copiar descripción base
+                              </MDButton>
+                            )}
+                          </MDBox>
+                          <MDTypography variant="caption" color="text" display="block" mb={1}>
+                            Si se deja vacío, se usará la descripción del producto base
+                            automáticamente.
+                          </MDTypography>
+                          <MDBox
+                            sx={{
+                              "& .quill": {
+                                backgroundColor: darkMode ? "#344767" : "#fff",
+                                color: darkMode ? "#fff" : "inherit",
+                                borderRadius: "8px",
+                              },
+                              "& .ql-toolbar": {
+                                borderColor: darkMode
+                                  ? "rgba(255, 255, 255, 0.2)"
+                                  : "rgba(0, 0, 0, 0.23)",
+                                borderTopLeftRadius: "8px",
+                                borderTopRightRadius: "8px",
+                              },
+                              "& .ql-container": {
+                                borderColor: darkMode
+                                  ? "rgba(255, 255, 255, 0.2)"
+                                  : "rgba(0, 0, 0, 0.23)",
+                                borderBottomLeftRadius: "8px",
+                                borderBottomRightRadius: "8px",
+                                minHeight: "100px",
+                              },
+                              "& .ql-editor": {
+                                minHeight: "100px",
+                              },
+                              "& .ql-stroke": {
+                                stroke: darkMode ? "#fff" : "#444",
+                              },
+                              "& .ql-fill": {
+                                fill: darkMode ? "#fff" : "#444",
+                              },
+                              "& .ql-stroke.ql-thin, & .ql-stroke.ql-round": {
+                                stroke: darkMode ? "#fff" : "#444",
+                              },
+                            }}
+                          >
+                            <ReactQuill
+                              theme="snow"
+                              value={variant.description || ""}
+                              onChange={(content) => handleVariantDescriptionChange(index, content)}
+                              modules={quillModules}
+                              placeholder="Escribe una descripción específica para esta variante o deja vacío para usar la base..."
+                            />
+                          </MDBox>
+                        </Grid>
                       </Grid>
 
                       {/* Actions */}
