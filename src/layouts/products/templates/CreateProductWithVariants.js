@@ -373,6 +373,12 @@ function CreateProductWithVariants() {
               .map((t) => t.trim())
               .filter(Boolean)
           : [],
+        searchTags: baseProduct.searchTags
+          ? baseProduct.searchTags
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean)
+          : [],
       },
       variants: variants.map((v) => ({
         ...v,
