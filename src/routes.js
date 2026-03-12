@@ -28,6 +28,7 @@ import ChatAnalytics from "layouts/chat-analytics";
 import Administration from "layouts/administration";
 import Reports from "layouts/reports"; // NEW: Reports layout
 import Claims from "layouts/claims"; // NEW: Claims layout
+import Coupons from "layouts/coupons";
 import SignIn from "layouts/authentication/sign-in";
 import SignUp from "layouts/authentication/sign-up";
 import ForgotPassword from "layouts/authentication/reset-password/cover";
@@ -59,6 +60,15 @@ const routes = [
     component: <Dashboard />,
     // Roles with double quotes for Prettier compliance
     allowedRoles: ["Administrador", "Editor"], // All authenticated users
+  },
+  {
+    type: "collapse",
+    name: "Cupones",
+    key: "coupons",
+    icon: <Icon fontSize="small">local_offer</Icon>,
+    route: "/coupons",
+    component: <Coupons />,
+    allowedRoles: ["Administrador", "Editor"],
   },
   {
     type: "collapse",

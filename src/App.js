@@ -81,6 +81,7 @@ import Administration from "layouts/administration";
 import ChatAnalytics from "layouts/chat-analytics";
 import Reports from "layouts/reports"; // NEW: Reports import
 import Claims from "layouts/claims"; // NEW: Claims import
+import Coupons from "layouts/coupons";
 
 // Variantes
 import Variants from "layouts/variants";
@@ -133,9 +134,11 @@ function MainAppContent() {
       return routes.filter((route) => !route.allowedRoles);
     }
     return routes.filter(
-      (route) => route.type === "collapse" && route.allowedRoles?.includes(user.role)
+      (route) =>
+        route.type === "collapse" &&
+        route.allowedRoles?.some((role) => role.toLowerCase() === user.role.toLowerCase())
     );
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, routes]);
 
   if (loading) {
     return (
@@ -401,6 +404,14 @@ function MainAppContent() {
                   element={
                     <ProtectedRoute allowedRoles={["Administrador", "Editor"]}>
                       <ChatAnalytics />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/coupons"
+                  element={
+                    <ProtectedRoute allowedRoles={["Administrador", "Editor"]}>
+                      <Coupons />
                     </ProtectedRoute>
                   }
                 />

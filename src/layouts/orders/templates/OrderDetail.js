@@ -253,13 +253,26 @@ function OrderDetail() {
 
     const isSimplified = order.taxRegime === "simplified";
 
-    // 1. Calculate items subtotal (Dynamic)
+    // Priority 1: Use stored breakdown if available (confirmed correct by user in emails)
+    if (order.taxBreakdown && order.taxBreakdown.itemsSubtotal > 0) {
+      return {
+        ...order.taxBreakdown,
+        discountAmount: order.discountAmount || order.taxBreakdown.discountAmount || 0,
+        estimatedTotalCost: order.items.reduce(
+          (acc, item) => acc + item.quantity * (item.costAtSale || item.product?.cost || 0),
+          0
+        ),
+      };
+    }
+
+    // Priority 2: Fallback to recalculation (for older orders or pending)
+    const discountPercentage = order.discountPercentage || order.coupon?.discountPercentage || 0;
     const itemsSubtotal = order.items.reduce(
       (acc, item) => acc + item.quantity * item.priceAtSale,
       0
     );
+    const discountAmount = Math.round(itemsSubtotal * (discountPercentage / 100));
 
-    // 2. Calculate items tax (Dynamic depending on regime)
     const itemsTax = isSimplified
       ? 0
       : order.items.reduce((acc, item) => {
@@ -267,7 +280,9 @@ function OrderDetail() {
             parseFloat(item.product?.iva) !== undefined && item.product?.iva !== ""
               ? parseFloat(item.product?.iva)
               : 13;
-          return acc + Math.round(item.quantity * item.priceAtSale * (iva / 100));
+          const discountedItemBase =
+            item.quantity * item.priceAtSale * (1 - discountPercentage / 100);
+          return acc + Math.round(discountedItemBase * (iva / 100));
         }, 0);
 
     let shippingBase = 0;
@@ -275,28 +290,27 @@ function OrderDetail() {
 
     // 3. Determine shipping components
     if (order.status === "pending") {
-      // For pending orders, always use fresh calculation from current address/items
       const sBaseRaw = calculateShippingFee(currentProvince, currentCity, order.items);
       shippingBase = isSimplified ? Math.round(sBaseRaw * 1.13) : sBaseRaw;
       shippingTax = isSimplified ? 0 : Math.round(shippingBase * 0.13);
     } else if (order.taxBreakdown && order.taxBreakdown.shippingBase > 0) {
-      // Use saved breakdown if available
       shippingBase = order.taxBreakdown.shippingBase;
       shippingTax = order.taxBreakdown.shippingTax;
 
-      // FIX: If stored as traditional but order is simplified, adjust shippingBase
       if (isSimplified && shippingTax > 0) {
         shippingBase = Math.round(shippingBase * 1.13);
         shippingTax = 0;
       }
     } else {
-      // Old orders or missing breakdown fallback
-      const sBaseRaw = 3450; // Use the value the user expects (or 3000 if that was original)
+      const sBaseRaw = 3450;
       shippingBase = isSimplified ? Math.round(sBaseRaw * 1.13) : sBaseRaw;
       shippingTax = isSimplified ? 0 : Math.round(shippingBase * 0.13);
     }
 
-    const calculatedTotal = itemsSubtotal + itemsTax + shippingBase + shippingTax;
+    // Total = Net Subtotal - Discount + Discounted Tax + Shipping
+    const calculatedTotal = Math.round(
+      itemsSubtotal - discountAmount + itemsTax + shippingBase + shippingTax
+    );
 
     // NEW: Estimated cost calculation for fallback (if order record has 0 cost)
     const estimatedTotalCost = order.items.reduce(
@@ -309,7 +323,8 @@ function OrderDetail() {
       itemsTax,
       shippingBase,
       shippingTax,
-      total: calculatedTotal,
+      discountAmount,
+      total: Math.round(calculatedTotal),
       estimatedTotalCost,
     };
   })();
@@ -438,7 +453,8 @@ function OrderDetail() {
   };
 
   const handlePrintSimplifiedTicket = () => {
-    const { itemsSubtotal, itemsTax, shippingBase, shippingTax, total } = displayBreakdown;
+    const { itemsSubtotal, itemsTax, shippingBase, shippingTax, discountAmount, total } =
+      displayBreakdown;
     const isSimplified = order?.taxRegime === "simplified";
     const company = systemEnv?.company || {
       name: "ORIYINA⅃",
@@ -545,6 +561,17 @@ function OrderDetail() {
                     <div>Envío: ${formatCurrency(shippingBase)}</div>
                     <div style="margin-top: 10px; font-style: italic;">"Contribuyente inscrito en el Régimen de Tributación Simplificada"</div>
                   `
+                }
+                ${
+                  discountAmount > 0
+                    ? `
+                    <div style="margin-top: 5px; color: #2c5530; font-weight: bold;">
+                      Descuento Cupón ${
+                        order.coupon?.code ? `(${order.coupon.code})` : ""
+                      }: -${formatCurrency(discountAmount)}
+                    </div>
+                  `
+                    : ""
                 }
               </div>
             </div>
@@ -742,6 +769,21 @@ function OrderDetail() {
                         <MDTypography variant="body2" color="text" mb={0.5}>
                           IVA Envío (13%):{" "}
                           {Math.round(displayBreakdown.shippingTax).toLocaleString("es-CR", {
+                            style: "currency",
+                            currency: "CRC",
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })}
+                        </MDTypography>
+                      )}
+                      {displayBreakdown.discountAmount > 0 && (
+                        <MDTypography
+                          variant="body2"
+                          sx={{ color: "success.main", fontWeight: "bold" }}
+                          mb={0.5}
+                        >
+                          Descuento Cupón {order.coupon?.code ? `(${order.coupon.code})` : ""}: -{" "}
+                          {Math.round(displayBreakdown.discountAmount).toLocaleString("es-CR", {
                             style: "currency",
                             currency: "CRC",
                             minimumFractionDigits: 0,
