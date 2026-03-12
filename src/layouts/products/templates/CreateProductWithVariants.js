@@ -324,7 +324,14 @@ function CreateProductWithVariants() {
   };
 
   const getAutoName = (variant) => {
-    return baseProduct.name || "";
+    const parts = [];
+    if (variant.colors && variant.colors.length > 0) parts.push(variant.colors.join(", "));
+    if (variant.sizes && variant.sizes.length > 0) parts.push(variant.sizes.join(", "));
+    if (variant.materials && variant.materials.length > 0) parts.push(variant.materials.join(", "));
+    if (variant.features && variant.features.length > 0) parts.push(variant.features.join(", "));
+
+    if (parts.length === 0) return baseProduct.name || "";
+    return `${baseProduct.name} - ${parts.join(" - ")}`;
   };
 
   const handleSubmit = async (e) => {
